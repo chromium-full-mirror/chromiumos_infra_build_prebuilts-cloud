@@ -30,4 +30,4 @@ The following steps can be used to connect to the database and verify deployment
 2. Open (2) SSH connections to the `cloudsql-connection` instance.
 3. In the (1) SSH-in-browser window, run `./cloud_sql_proxy -instances=chromeos-prebuilts:us-central1:prebuilts-staging=tcp:5432`.
 4. In the (2) SSH-in-browser window, run `psql "host=127.0.0.1 port=5432 sslmode=disable dbname=lookup_service user=postgres"`.
-5. The postgres user password can be found [here](https://valentine.corp.google.com/#/show/1674164197911673?tab=metadata).
+5. The postgres user password can be found [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
