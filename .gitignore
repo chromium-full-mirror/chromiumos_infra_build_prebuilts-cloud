@@ -1,0 +1,6 @@
+# Compiled files
+*.pyc
+__pycache__/
+
+# Unittesting
+.pytest_cache/
