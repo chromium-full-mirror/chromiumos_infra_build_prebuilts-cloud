@@ -1,0 +1,45 @@
+# Copyright 2023 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Dependencies needed to run unittests.
+
+python_version: "3.8"
+
+# Pytest dependencies.
+wheel: <
+  name: "infra/python/wheels/attrs-py3"
+  version: "version:20.3.0"
+>
+wheel: <
+  name: "infra/python/wheels/more-itertools-py2_py3"
+  version: "version:4.1.0"
+>
+wheel: <
+  name: "infra/python/wheels/packaging-py2_py3"
+  version: "version:16.8"
+>
+wheel: <
+  name: "infra/python/wheels/pluggy-py3"
+  version: "version:0.13.1"
+>
+wheel: <
+  name: "infra/python/wheels/py-py2_py3"
+  version: "version:1.10.0"
+>
+wheel: <
+  name: "infra/python/wheels/pyparsing-py3"
+  version: "version:3.0.7"
+>
+wheel: <
+  name: "infra/python/wheels/pytest-py3"
+  version: "version:5.4.3"
+>
+wheel: <
+  name: "infra/python/wheels/six-py3"
+  version: "version:1.15.0"
+>
+wheel: <
+  name: "infra/python/wheels/wcwidth-py3"
+  version: "version:0.2.5"
+>

@@ -38,7 +38,7 @@ To test `staging-lookup-service`, go to the `Testing` [tab](https://pantheon.cor
 
 ### Unit Testing
 
-TODO.
+We use [pytest](https://docs.pytest.org/en/7.2.x/) as our unittesting framework and [VPython](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython_one_page.md) to run unittests in a Python VirtualEnv. See [here](https://chromium.googlesource.com/infra/infra/+/main/infra/tools/dockerbuild/wheels.md) for a list of available wheels. `vpython3 run_tests.py` will run all unittests by default.
 
 ## Cloud SQL
 
