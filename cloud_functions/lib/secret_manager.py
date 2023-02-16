@@ -29,8 +29,8 @@ class LookupServiceDbSecrets:
         self.staging = True if os.environ.get("STAGING") else False
 
     @property
-    def host(self) -> str:
-        """Gets the database."""
+    def database_name(self) -> str:
+        """Gets the database name."""
         secret = "prebuilts-staging-db" if self.staging else "prebuilts-db"
         return _get_secret(secret)
 

@@ -4,12 +4,25 @@
 
 """Cloud Functions entry point implementations."""
 
+import os
+
 import flask
 
+from lib import db_connector
 from lib import secret_manager
 
 
 def main(request: flask.Request) -> str:
     """Responds to HTTP requests for testing. To be removed/updated."""
+
     secrets = secret_manager.LookupServiceDbSecrets()
-    return secrets.host
+    # TODO(b/270588095) : Move host and port to secret manager based on local development setup
+    lookup_service_db_connection = db_connector.LookupServiceDBConnection(
+        database=secrets.database_name,
+        host=os.environ.get("PREBUILTS_SQL_INSTANCE_HOST"),
+        port=os.environ.get("PREBUILTS_SQL_INSTANCE_PORT"),
+        username=secrets.user,
+        password=secrets.password,
+    )
+
+    return secrets.database_name

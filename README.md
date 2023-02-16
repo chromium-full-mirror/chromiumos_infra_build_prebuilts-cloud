@@ -30,6 +30,12 @@ Option 2: Use the Cloud Functions Inline Editor (Not Recommended)
 3. In Step 2, Code, make changes directly using the Inline Editor provided.
 4. Select `Deploy` and wait a few minutes. If the deployment fails, take a look at the logs and make adjustments as needed.
 
+#### Runtime environment variables for the lookup service cloud function:
+
+- STAGING : Boolean to denote staging environment. e.g. 1 for staging.
+- PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql instance.
+- PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
+
 ### General Testing
 
 The main way to test deployed Cloud Functions via a [trigger](https://cloud.google.com/functions/docs/calling) including HTTP requests and Pub/Sub. `staging-lookup-service` is setup to accept HTTP triggers via the `main` function. A function cannot have more than one trigger associated with it, but a trigger can be associated with many functions (as long as the functions are unique).
