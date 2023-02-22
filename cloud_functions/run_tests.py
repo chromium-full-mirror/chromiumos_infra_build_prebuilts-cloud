@@ -8,5 +8,5 @@ import pytest
 
 
 if __name__ == "__main__":
-    return_code = pytest.main()
+    return_code = pytest.main(["--disable-warnings"])
     sys.exit(return_code)
