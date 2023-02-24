@@ -7,3 +7,8 @@ __pycache__/
 
 # vscode config files
 .vscode/
+
+# files for local development
+.env.local
+venv/
+local_payload.json

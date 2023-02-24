@@ -42,6 +42,35 @@ The main way to test deployed Cloud Functions via a [trigger](https://cloud.goog
 
 To test `staging-lookup-service`, go to the `Testing` [tab](https://pantheon.corp.google.com/functions/details/us-central1/staging-lookup-service?env=gen1&project=chromeos-prebuilts&tab=testing) and click `Test the Function`. Output is only available if the Cloud Function is deployed using `1st gen` environment.
 
+### Local testing and development
+
+To develop and test cloud functions locally, we should be able to connect to the cloud sql instance from our local machine/cloudtop. Hence, `Public IP` has been enabled on the `prebuilts-staging` instance to accommodate this and the database can be accessed locally through cloud sql auth proxy. **Public IP should not be enabled in production.**
+
+Note: We are running the cloud function locally but are using GCP's staging environment, including staging Cloud SQL database and Secret Manager instances.
+
+Steps to run cloud functions locally (All of these steps are done outside the chroot):
+- Setup [cloud sql auth proxy](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy):
+    - Follow the steps [here](https://cloud.google.com/sql/docs/postgres/sql-proxy#install) to download and install Cloud SQL Auth proxy.
+    - Add the downloaded `cloud-sql-proxy` to your `$PATH`.
+    - Start the auth proxy:
+        ```
+        $cloud-sql-proxy --address 127.0.0.1 --port 5432 chromeos-prebuilts:us-central1:prebuilts-staging
+        ```
+    - The database should now be accessable locally through the proxy.
+- Install [functions-framework](https://pypi.org/project/functions-framework/).
+- The default values for env variables are in the `scripts/.env.defaults` file. Add a `scripts/.env.local` file to override the values, this can be helpful for local testing without checking it into the repo. Env variables used:
+    - FUNCTION_SOURCE_FILE : Source file for the cloud function.
+    - FUNCTION_TARGET : Entry point for the cloud function.
+    - FUNCTION_PORT : Port to run the function on.
+    - STAGING : 1 to denote staging environment.
+    - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
+    - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
+- Create a `local_payload.json` file in the `scripts/` folder. This payload will be sent when the function is invoked.
+- Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
+- Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh`
+
+Note: The cloud function auto restarts when any of the source files are changed.
+
 ### Unit Testing
 
 We use [pytest](https://docs.pytest.org/en/7.2.x/) as our unittesting framework and [VPython](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython_one_page.md) to run unittests in a Python VirtualEnv. See [here](https://chromium.googlesource.com/infra/infra/+/main/infra/tools/dockerbuild/wheels.md) for a list of available wheels. `vpython3 run_tests.py` will run all unittests by default.
