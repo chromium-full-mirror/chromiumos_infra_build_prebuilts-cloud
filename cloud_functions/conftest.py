@@ -1,0 +1,70 @@
+# Copyright 2023 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+"""Module to hold pytest fixtures."""
+
+
+from typing import Any, Dict
+from unittest.mock import Mock
+
+import pytest
+
+from lib import db_connector
+from lib import models
+
+
+@pytest.fixture
+def mock_snapshot_object() -> models.Snapshots:
+    """Fixture to return a mock snapshot object."""
+
+    return models.Snapshots(
+        snapshot_sha="", snapshot_num=1, external=True, buildbucket_id=1
+    )
+
+
+def setup_mock_db_connection(
+    session_attrs: Dict[str, Any],
+) -> db_connector.LookupServiceDBConnection:
+    """Generic method to setup a mock db connection.
+
+    Return values for the sqlalchemy session are configured based on
+    session_attrs.
+
+    Args:
+        session_attrs: dictionary containing attributes to be set to the mock
+            sqlalchemy session.
+
+    Returns:
+        A mock db connection.
+    """
+    # Mock the _get_engine menthod of LookupServiceDBConnection.
+    db_connector.LookupServiceDBConnection._get_engine = Mock()
+
+    lookup_service_db_connection = db_connector.LookupServiceDBConnection(
+        "", "", 0, "", ""
+    )
+
+    # Mock the _session attribute to have mock db responses from sqlalchemy.
+    lookup_service_db_connection._session = Mock(**session_attrs)
+
+    return lookup_service_db_connection
+
+
+@pytest.fixture
+def mock_snapshots_db_connection(
+    mock_snapshot_object,
+) -> db_connector.LookupServiceDBConnection:
+    """Fixture to mock a db connection configured for the snapshot table.
+
+    The sqlalchemy session is configured to mock responses from the snapshots
+    table.
+    """
+    attrs = {
+        "query.return_value.get.return_value": mock_snapshot_object,
+        "query.return_value.filter.return_value.all.return_value": [
+            mock_snapshot_object
+        ],
+    }
+
+    return setup_mock_db_connection(attrs)
