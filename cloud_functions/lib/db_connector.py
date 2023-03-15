@@ -12,6 +12,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import NoResultFound
 import sqlalchemy.orm
 
+from lib.models import BuildTargetProfiles
 from lib.models import Snapshots
 
 
@@ -159,9 +160,9 @@ class LookupServiceDBConnection:
     def snapshots_update(
         self,
         snapshot_sha: str,
-        snapshot_num: int = None,
-        external: bool = None,
-        buildbucket_id: int = None,
+        snapshot_num: Optional[int] = None,
+        external: Optional[bool] = None,
+        buildbucket_id: Optional[int] = None,
     ) -> None:
         """Update a snapshot.
 
@@ -215,4 +216,153 @@ class LookupServiceDBConnection:
         except DBAPIError as sql_error:
             raise DBError(
                 "Error when deleting the snapshot record."
+            ) from sql_error
+
+    def build_target_profiles_create(
+        self,
+        build_target: str,
+        profile: str,
+    ) -> None:
+        """Insert a build target profile record.
+
+        Args:
+            build_target: The system Chrome OS is being built for, also known
+                as board.
+            profile: Name of the profile to use with the build_target.
+
+        Raises:
+            DBError: When the insert operation fails.
+        """
+        new_build_target_profile = BuildTargetProfiles(
+            build_target=build_target,
+            profile=profile,
+        )
+        self._session.add(new_build_target_profile)
+        try:
+            self._session.commit()
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Unable to create build target profile record."
+            ) from sql_error
+
+    def build_target_profiles_read(
+        self, build_target_profile_id: int, required: bool = True
+    ) -> Optional[Snapshots]:
+        """Read from build target profiles based on build_target_profile_id.
+
+        Args:
+            build_target_profile_id: Id of the build target profile to read.
+            required: Bool to indicate if it is compulsory to return a
+                build target profile.
+
+        Returns:
+            A build target profile object if present, returns None otherwise.
+
+        Raises:
+            DBError: When the read operation fails.
+            NoResultFound: When required=True and no build target profile
+                is found.
+        """
+        try:
+            result = self._session.query(BuildTargetProfiles).get(
+                build_target_profile_id
+            )
+
+            if required and result is None:
+                raise NoResultFound("No build target profile record found.")
+
+            return result
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when executing the read operation for build target"
+                " profiles."
+            ) from sql_error
+
+    def build_target_profiles_filter(
+        self, filter_exp: str
+    ) -> List[BuildTargetProfiles]:
+        """Filter and read from the build_target_profiles table.
+
+        Args:
+            filter_exp: Textual sql filter expression that would be in a
+                sql WHERE clause. e.g."build_target='brya'".
+
+        Returns:
+            A list of build target profile objects based on the filter.
+
+        Raises:
+            DBError: When the sql filter query fails.
+        """
+        try:
+            result = (
+                self._session.query(BuildTargetProfiles)
+                .filter(sqlalchemy.text(filter_exp))
+                .all()
+            )
+            return result
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when executing the filter query."
+            ) from sql_error
+
+    def build_target_profiles_update(
+        self,
+        build_target_profile_id: int,
+        build_target: Optional[str] = None,
+        profile: Optional[str] = None,
+    ) -> None:
+        """Update a snapshot.
+
+        Args:
+            build_target_profile_id: Id of the build target profile to be
+                updated.
+            build_target: If given, new build target value for the build target
+                profile.
+            profile: If given, new profile value for the build target profile.
+
+        Raises:
+            DBError: When no data is sent to update the build target profile
+                record or if there is a database operation error from sqlalchemy.
+        """
+        if build_target is None and profile is None:
+            raise DBError("No data to update the build target profile record.")
+
+        build_target_profile_to_update = self.build_target_profiles_read(
+            build_target_profile_id
+        )
+
+        if build_target is not None:
+            build_target_profile_to_update.build_target = build_target
+
+        if profile is not None:
+            build_target_profile_to_update.profile = profile
+
+        try:
+            self._session.commit()
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when updating the build target profile record."
+            ) from sql_error
+
+    def build_target_profiles_delete(
+        self,
+        build_target_profile_id: int,
+    ) -> None:
+        """Delete a build target profile.
+
+        Args:
+            build_target_profile_id: Id of the build target profile to delete.
+
+        Raises:
+            DBError: When delete operation fails.
+        """
+        build_target_profile_to_delete = self.build_target_profiles_read(
+            build_target_profile_id
+        )
+        try:
+            self._session.delete(build_target_profile_to_delete)
+            self._session.commit()
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when deleting the build target profile record."
             ) from sql_error

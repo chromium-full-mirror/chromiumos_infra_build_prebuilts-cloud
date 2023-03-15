@@ -68,3 +68,32 @@ def mock_snapshots_db_connection(
     }
 
     return setup_mock_db_connection(attrs)
+
+
+@pytest.fixture
+def mock_build_target_profiles_object() -> models.BuildTargetProfiles:
+    """Fixture to return a mock build target profile object."""
+    return models.BuildTargetProfiles(
+        build_target_profile_id=1,
+        build_target="test_build_target",
+        profile="test_profile",
+    )
+
+
+@pytest.fixture
+def mock_build_target_profiles_db_connection(
+    mock_build_target_profiles_object,
+) -> db_connector.LookupServiceDBConnection:
+    """Fixture to mock a db connection configured for build target profiles.
+
+    The sqlalchemy session is configured to mock responses from the build target
+    profiles table.
+    """
+    attrs = {
+        "query.return_value.get.return_value": mock_build_target_profiles_object,
+        "query.return_value.filter.return_value.all.return_value": [
+            mock_build_target_profiles_object
+        ],
+    }
+
+    return setup_mock_db_connection(attrs)
