@@ -10,12 +10,11 @@ from sqlalchemy import BOOLEAN
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import INTEGER
-from sqlalchemy import VARCHAR
 from sqlalchemy import TEXT
 from sqlalchemy import TIMESTAMP
-from sqlalchemy.sql import func
-
+from sqlalchemy import VARCHAR
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
 
 
 Base = declarative_base()
