@@ -12,6 +12,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import NoResultFound
 import sqlalchemy.orm
 
+from lib.models import Binhosts
 from lib.models import BuildTargetProfiles
 from lib.models import Snapshots
 
@@ -76,6 +77,21 @@ class LookupServiceDBConnection:
         """
         return sqlalchemy.orm.sessionmaker(bind=self._engine)()
 
+    def _commit_session(self, error_msg: str) -> None:
+        """Commit the current sqlalchemy session to the DB.
+
+        Args:
+            error_msg: A descriptive error message when the commit transaction
+                fails.
+
+        Raises:
+            DBError: When the commit transaction fails.
+        """
+        try:
+            self._session.commit()
+        except DBAPIError as sql_error:
+            raise DBError(error_msg) from sql_error
+
     def snapshots_create(
         self,
         snapshot_sha: str,
@@ -101,10 +117,7 @@ class LookupServiceDBConnection:
             buildbucket_id=buildbucket_id,
         )
         self._session.add(new_snapshot)
-        try:
-            self._session.commit()
-        except DBAPIError as sql_error:
-            raise DBError("Unable to create snapshot record.") from sql_error
+        self._commit_session(error_msg="Unable to create snapshot record.")
 
     def snapshots_read(
         self, snapshot_sha: str, required: bool = True
@@ -174,7 +187,8 @@ class LookupServiceDBConnection:
 
         Raises:
             DBError: When no data is sent to update the snapshot record or if
-            there is a database operation error from sqlalchemy.
+                there is a database operation error from sqlalchemy.
+            NoResultFound: When no snapshot is found.
         """
         if snapshot_num is None and external is None and buildbucket_id is None:
             raise DBError("No data to update the snapshot record.")
@@ -190,12 +204,9 @@ class LookupServiceDBConnection:
         if buildbucket_id is not None:
             snapshot_to_update.buildbucket_id = buildbucket_id
 
-        try:
-            self._session.commit()
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when updating the snapshot record."
-            ) from sql_error
+        self._commit_session(
+            error_msg="Error when updating the snapshot record."
+        )
 
     def snapshots_delete(
         self,
@@ -208,15 +219,13 @@ class LookupServiceDBConnection:
 
         Raises:
             DBError: when delete operation fails.
+            NoResultFound: When no snapshot is found.
         """
         snapshot_to_delete = self.snapshots_read(snapshot_sha)
-        try:
-            self._session.delete(snapshot_to_delete)
-            self._session.commit()
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when deleting the snapshot record."
-            ) from sql_error
+        self._session.delete(snapshot_to_delete)
+        self._commit_session(
+            error_msg="Error when deleting the snapshot record."
+        )
 
     def build_target_profiles_create(
         self,
@@ -238,12 +247,9 @@ class LookupServiceDBConnection:
             profile=profile,
         )
         self._session.add(new_build_target_profile)
-        try:
-            self._session.commit()
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Unable to create build target profile record."
-            ) from sql_error
+        self._commit_session(
+            error_msg="Unable to create build target profile record."
+        )
 
     def build_target_profiles_read(
         self, build_target_profile_id: int, required: bool = True
@@ -323,6 +329,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When no data is sent to update the build target profile
                 record or if there is a database operation error from sqlalchemy.
+            NoResultFound: When no build target profile is found.
         """
         if build_target is None and profile is None:
             raise DBError("No data to update the build target profile record.")
@@ -337,12 +344,9 @@ class LookupServiceDBConnection:
         if profile is not None:
             build_target_profile_to_update.profile = profile
 
-        try:
-            self._session.commit()
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when updating the build target profile record."
-            ) from sql_error
+        self._commit_session(
+            error_msg="Error when updating the build target profile record."
+        )
 
     def build_target_profiles_delete(
         self,
@@ -355,14 +359,180 @@ class LookupServiceDBConnection:
 
         Raises:
             DBError: When delete operation fails.
+            NoResultFound: When no build target profile is found.
         """
         build_target_profile_to_delete = self.build_target_profiles_read(
             build_target_profile_id
         )
+        self._session.delete(build_target_profile_to_delete)
+        self._commit_session(
+            error_msg="Error when deleting the build target profile record."
+        )
+
+    def binhosts_create(
+        self,
+        build_target_profile_id: int,
+        snapshot_sha: str,
+        gs_bucket_name: str,
+        gs_uri: str,
+        buildbucket_id: int,
+        complete: bool,
+        private: bool,
+    ) -> None:
+        """Insert a binhost record.
+
+        Args:
+            build_target_profile_id: Foreign key for the build target profile.
+            snapshot_sha: Foreign key for the snapshot associated with the
+                binhost.
+            gs_bucket_name: Name of the google storage bucket which contains the
+                binhost.
+            gs_uri: Location of the binhost object in google storage.
+            buildbucket_id: Id of the postsubmit builder that created and
+                uploaded the binhost.
+            complete: Bool to indicate if this binhost contains all the binpkgs
+                specified in the packages metadata file.
+            private: Bool to indicate if the binhost is private.
+
+        Raises:
+            DBError: When the insert operation fails.
+        """
+        new_binhost = Binhosts(
+            build_target_profile_id=build_target_profile_id,
+            snapshot_sha=snapshot_sha,
+            gs_bucket_name=gs_bucket_name,
+            gs_uri=gs_uri,
+            buildbucket_id=buildbucket_id,
+            complete=complete,
+            private=private,
+        )
+        self._session.add(new_binhost)
+        self._commit_session(error_msg="Unable to create binhost record.")
+
+    def binhosts_read(
+        self, binhost_id: str, required: bool = True
+    ) -> Optional[Binhosts]:
+        """Read from the binhosts table based on binhost_id.
+
+        Args:
+            binhost_id: Id of the binhost to read.
+            required: Bool to indicate if it is compulsory to return a binhost.
+
+        Returns:
+            A binhost object if present, returns None otherwise.
+
+        Raises:
+            DBError: When the read operation fails.
+            NoResultFound: When required=True and no binhost is found.
+        """
         try:
-            self._session.delete(build_target_profile_to_delete)
-            self._session.commit()
+            result = self._session.query(Binhosts).get(binhost_id)
         except DBAPIError as sql_error:
             raise DBError(
-                "Error when deleting the build target profile record."
+                "Error when executing the read operation for binhosts."
             ) from sql_error
+
+        if required and result is None:
+            raise NoResultFound("No binhost record found.")
+        return result
+
+    def binhosts_filter(self, filter_exp: str) -> List[Binhosts]:
+        """Filter and read from the binhosts table.
+
+        Args:
+            filter_exp: Textual sql filter expression that would be in a
+                sql WHERE clause. e.g."private=True AND snapshot_sha='123'".
+
+        Returns:
+            A list of binhost objects based on the filter.
+
+        Raises:
+            DBError: When the sql filter query fails.
+        """
+        try:
+            result = (
+                self._session.query(Binhosts)
+                .filter(sqlalchemy.text(filter_exp))
+                .all()
+            )
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when executing the filter query."
+            ) from sql_error
+        return result
+
+    def binhosts_update(
+        self,
+        binhost_id: int,
+        build_target_profile_id: Optional[int] = None,
+        snapshot_sha: Optional[str] = None,
+        gs_bucket_name: Optional[str] = None,
+        gs_uri: Optional[str] = None,
+        buildbucket_id: Optional[int] = None,
+        complete: Optional[bool] = None,
+        private: Optional[bool] = None,
+    ) -> None:
+        """Update a binhost.
+
+        Args:
+            binhost_id: Id of the binhost to be updated.
+            build_target_profile_id: If given, new build_target_profile_id value
+                for the binhost.
+            snapshot_sha: If given, new snapshot_sha value for the binhost.
+            gs_bucket_name: If given, new gs_bucket_name value for the binhost.
+            gs_uri: If given, new gs_uri value for the binhost.
+            buildbucket_id: If given, new buildbucket_id value for the binhost.
+            complete: If given, new complete value for the binhost.
+            private: If given, new private value for the binhost.
+
+        Raises:
+            DBError: When no data is sent to update the binhost record or if
+                there is a database operation error from sqlalchemy.
+            NoResultFound: When no binhost is found.
+        """
+
+        # Construct dict for easy iteration when applying updates.
+        update_attrs = {
+            "build_target_profile_id": build_target_profile_id,
+            "snapshot_sha": snapshot_sha,
+            "gs_bucket_name": gs_bucket_name,
+            "gs_uri": gs_uri,
+            "buildbucket_id": buildbucket_id,
+            "complete": complete,
+            "private": private,
+        }
+
+        # Raise an error if there is no new data to update the binhost.
+        if all(val is None for val in update_attrs.values()):
+            raise DBError("No data to update the binhost record.")
+
+        binhost_to_update = self.binhosts_read(binhost_id)
+
+        # Assign new values to the binhost_to_update object.
+        for key, val in update_attrs.items():
+            if val is not None:
+                setattr(binhost_to_update, key, val)
+
+        self._commit_session(
+            error_msg="Error when updating the binhost record."
+        )
+
+    def binhosts_delete(
+        self,
+        binhost_id: int,
+    ) -> None:
+        """Delete a binhost.
+
+        Args:
+            binhost_id: Id of the binhost to delete.
+
+        Raises:
+            DBError: when delete operation fails.
+            NoResultFound: When no binhost is found.
+        """
+
+        binhost_to_delete = self.binhosts_read(binhost_id)
+        self._session.delete(binhost_to_delete)
+        self._commit_session(
+            error_msg="Error when deleting the binhost record."
+        )

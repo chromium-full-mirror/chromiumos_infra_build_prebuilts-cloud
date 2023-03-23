@@ -106,7 +106,7 @@ def test_snapshots_update_error(
 def test_snapshots_delete(
     mock_snapshots_db_connection: LookupServiceDBConnection,
 ):
-    """Test the update snapshot method."""
+    """Test the delete snapshots method."""
     # Assert that the delete operation calls have been made through sqlalchemy.
     mock_snapshots_db_connection.snapshots_delete("sha1")
     mock_snapshots_db_connection._session.delete.assert_called_once()
@@ -245,10 +245,121 @@ def test_build_target_profiles_update_error(
 def test_build_target_profiles_delete(
     mock_build_target_profiles_db_connection: LookupServiceDBConnection,
 ):
-    """Test the update build target profile method."""
+    """Test the delete build target profiles method."""
     # Assert that the delete operation calls have been made through sqlalchemy.
     mock_build_target_profiles_db_connection.build_target_profiles_delete(
         "sha1"
     )
     mock_build_target_profiles_db_connection._session.delete.assert_called_once()
     mock_build_target_profiles_db_connection._session.commit.assert_called_once()
+
+
+def test_binhosts_create(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test the create binhosts method."""
+    mock_binhosts_db_connection.binhosts_create(
+        build_target_profile_id=2,
+        snapshot_sha="sha1",
+        gs_bucket_name="test_bucket",
+        gs_uri="test_uri",
+        buildbucket_id=3,
+        complete=True,
+        private=True,
+    )
+    mock_binhosts_db_connection._session.add.assert_called_once()
+    mock_binhosts_db_connection._session.commit.assert_called_once()
+
+
+def test_binhosts_create_error(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test error handling of the create binhosts method."""
+    # Forcing an error from sqlalchemy commit.
+    mock_binhosts_db_connection._session.commit = Mock(
+        side_effect=DBAPIError("statement", None, "db error")
+    )
+
+    with pytest.raises(DBError, match=r"^Unable to create binhost record\.$"):
+        mock_binhosts_db_connection.binhosts_create(
+            build_target_profile_id=2,
+            snapshot_sha="sha1",
+            gs_bucket_name="test_bucket",
+            gs_uri="test_uri",
+            buildbucket_id=3,
+            complete=True,
+            private=True,
+        )
+
+
+def test_binhosts_read(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhost_object: models.Binhosts,
+):
+    """Test the read binhosts method."""
+    assert mock_binhosts_db_connection.binhosts_read(1) == mock_binhost_object
+
+
+def test_binhosts_read_error(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test error handling of the read binhost method."""
+    # Return None from sqlalchemy get query.
+    mock_binhosts_db_connection._session.query.return_value.get.return_value = (
+        None
+    )
+
+    with pytest.raises(NoResultFound, match=r"^No binhost record found\.$"):
+        mock_binhosts_db_connection.binhosts_read(1)
+
+
+def test_binhosts_filter(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhost_object: models.Binhosts,
+):
+    """Test the filter binhosts method."""
+    assert mock_binhosts_db_connection.binhosts_filter("binhost_id=1") == [
+        mock_binhost_object
+    ]
+
+
+def test_binhosts_update(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test the update binhosts method."""
+    # Assert that the updates have been commited through sqlalchemy.
+    mock_binhosts_db_connection.binhosts_update(1, 2)
+    mock_binhosts_db_connection._session.commit.assert_called_once()
+
+
+def test_binhosts_update_error(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test error handling of the update binhosts method."""
+    # Assert DBError is raised when there's no data provided to update the
+    # binhost.
+    with pytest.raises(
+        DBError, match=r"^No data to update the binhost record\.$"
+    ):
+        mock_binhosts_db_connection.binhosts_update(1)
+
+    # Assert NoResultFound is raised when no binhost record is found with the
+    # given binhost_id.
+    mock_binhosts_db_connection._session.query.return_value.get = Mock(
+        return_value=None
+    )
+    with pytest.raises(
+        NoResultFound,
+        match=r"^No binhost record found\.$",
+    ):
+        mock_binhosts_db_connection.binhosts_update(1, 2)
+
+
+def test_binhosts_delete(
+    mock_binhosts_db_connection: LookupServiceDBConnection,
+):
+    """Test the delete binhosts method."""
+    # Assert that the delete operation calls have been made through sqlalchemy.
+    mock_binhosts_db_connection.binhosts_delete(1)
+    mock_binhosts_db_connection._session.delete.assert_called_once()
+    mock_binhosts_db_connection._session.commit.assert_called_once()

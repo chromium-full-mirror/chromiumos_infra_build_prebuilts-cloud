@@ -53,7 +53,7 @@ def setup_mock_db_connection(
 
 @pytest.fixture
 def mock_snapshots_db_connection(
-    mock_snapshot_object,
+    mock_snapshot_object: models.Snapshots,
 ) -> db_connector.LookupServiceDBConnection:
     """Fixture to mock a db connection configured for the snapshot table.
 
@@ -82,7 +82,7 @@ def mock_build_target_profiles_object() -> models.BuildTargetProfiles:
 
 @pytest.fixture
 def mock_build_target_profiles_db_connection(
-    mock_build_target_profiles_object,
+    mock_build_target_profiles_object: models.BuildTargetProfiles,
 ) -> db_connector.LookupServiceDBConnection:
     """Fixture to mock a db connection configured for build target profiles.
 
@@ -93,6 +93,40 @@ def mock_build_target_profiles_db_connection(
         "query.return_value.get.return_value": mock_build_target_profiles_object,
         "query.return_value.filter.return_value.all.return_value": [
             mock_build_target_profiles_object
+        ],
+    }
+
+    return setup_mock_db_connection(attrs)
+
+
+@pytest.fixture
+def mock_binhost_object() -> models.Binhosts:
+    """Fixture to return a mock binhost object."""
+    return models.Binhosts(
+        binhost_id=1,
+        build_target_profile_id=2,
+        snapshot_sha="sha1",
+        gs_bucket_name="test_bucket",
+        gs_uri="test_uri",
+        buildbucket_id=3,
+        complete=True,
+        private=True,
+    )
+
+
+@pytest.fixture
+def mock_binhosts_db_connection(
+    mock_binhost_object: models.Binhosts,
+) -> db_connector.LookupServiceDBConnection:
+    """Fixture to mock a db connection configured for the binhosts table.
+
+    The sqlalchemy session is configured to mock responses from the binhosts
+    table.
+    """
+    attrs = {
+        "query.return_value.get.return_value": mock_binhost_object,
+        "query.return_value.filter.return_value.all.return_value": [
+            mock_binhost_object
         ],
     }
 

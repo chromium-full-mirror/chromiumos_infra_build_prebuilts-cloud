@@ -51,6 +51,7 @@ class Binhosts(Base):
         nullable=False,
     )
     snapshot_sha = Column(VARCHAR(40), ForeignKey("snapshots.snapshot_sha"))
+    gs_bucket_name = Column(TEXT, nullable=False)
     gs_uri = Column(TEXT, nullable=False)
     buildbucket_id = Column(BIGINT, nullable=False)
     complete = Column(BOOLEAN, nullable=False, default=True)
