@@ -6,12 +6,31 @@ This repo houses all the GCP code for the `chromeos-prebuilts` project.
 
 We're using Cloud Functions as a serverless platform for the lookup service.
 
+The entry points for the Cloud Functions are defined in `cloud_functions/main.py`.
+Each entry point has a `functions_framework` decorator which helps receive the function
+arguments based on the signature type specified.
+
 ### Deployment
 
 **During initial development, we are manually deploying changes to the `staging` instances of both Cloud SQL and Cloud Functions.
 DO NOT deploy to production instances as the production deployment process will be automated later.**
 
-There are two ways to manually deploy changes:
+Creating Cloud Functions via the Google Cloud console:
+
+1. Go to `Cloud Functions` and click on `Create function`.
+2. Select `Environment=2nd gen`, enter a function name.
+3. For event driven functions which need to be triggered from Pub/Sub messages:
+    - Note: The cloud function must be created after the topic has been created.
+        Since each cloud function can only have one trigger, in cases where we
+        have the same function entry point to consume messages from different
+        Pub/Sub topics, create multiple cloud functions, one for each topic.
+    - Click on `Add EventArc Trigger` and select `Trigger type=Google sources`, `Event provider=Cloud Pub/Sub` and `Event=google.cloud.pubsub.topic.v1.messagePublished`.
+    - Select the Pub/Sub topic and select the `prebuilts-cloud` service account.
+    - Check the `Retry on failure` box. This ensures that the message is processed again when there's an error.
+4. Enter configuration settings such as runtime env variables and connection settings to enable routing through the VPC connector.
+
+
+There are two ways to manually deploy additional changes:
 
 Option 1: Create and upload a zip of the source code (Recommended)
 
@@ -56,15 +75,18 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
         ```
         $cloud-sql-proxy --address 127.0.0.1 --port 5432 chromeos-prebuilts:us-central1:prebuilts-staging
         ```
-    - The database should now be accessable locally through the proxy.
+    - The database should now be accessible locally through the proxy.
 - Install [functions-framework](https://pypi.org/project/functions-framework/).
 - The default values for env variables are in the `scripts/.env.defaults` file. Add a `scripts/.env.local` file to override the values, this can be helpful for local testing without checking it into the repo. Env variables used:
     - FUNCTION_SOURCE_FILE : Source file for the cloud function.
     - FUNCTION_TARGET : Entry point for the cloud function.
     - FUNCTION_PORT : Port to run the function on.
+    - FUNCTION_SIGNATURE_TYPE : Signature type of the function, which determines
+        the event format. Can be one of http, event or cloudevent.
     - STAGING : 1 to denote staging environment.
     - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
     - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
+    - TOPIC_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
 - Create a `local_payload.json` file in the `scripts/` folder. This payload will be sent when the function is invoked.
 - Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
 - Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh`
@@ -107,3 +129,38 @@ The following steps can be used to connect to the database and verify deployment
 3. In the (1) SSH-in-browser window, run `./cloud_sql_proxy -instances=chromeos-prebuilts:us-central1:prebuilts-staging=tcp:5432`.
 4. In the (2) SSH-in-browser window, run `psql "host=127.0.0.1 port=5432 sslmode=disable dbname=lookup_service user=postgres"`.
 5. The postgres user password can be found [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
+
+## Pub/Sub
+
+We're using [Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to receive messages and update metadata for snapshots, binhosts, etc in the database.
+The `update_service` cloud functions receive messages as cloud events through Pub/Sub subscriptions via EventArc triggers. Each use case has its own
+Pub/Sub topic (e.g. update_snapshot_data, update_binhost_data) and the corresponding cloud function processes the messages, performs database operations.
+With 2nd gen cloud functions, each function can only have one trigger. So each Pub/Sub topic has its own cloud function for processing messages.
+
+### Deployment
+
+**During initial development, we are manually creating Pub/Sub schemas, topics and corresponding subscriptions via Google Cloud console.
+DO NOT deploy to production instances as the production deployment process will be automated later.**
+
+Steps for setting up Pub/Sub topics (this needs to be done for each topic):
+
+1. In Google Cloud console, go to `Pub/Sub`.
+2. Create Schema (used for validating Pub/Sub message format):
+    - Go to `Schemas` and click `Create Schema`.
+    - Type a Schema ID and select `Schema type=Protocol Buffer`.
+    - Enter the protocol buffer definition for this schema and create the schema.
+    - Note: The same protobuf schema definition is used in the `update_service` cloud function to consume messages from this topic.
+3. Create Pub/Sub topic:
+    - Go to `Topics` and click `Create topic`.
+    - Type a Topic ID and check the `Use a schema` box, select the previously created schema and encoding `type=Binary`. Select the `Enable message retention` box with `Days=7`.
+    - Use the default `Google-managed encryption key`.
+4. Trigger for the `update_service` cloud function:
+    - When creating the cloud function, an `Eventarc trigger` is enabled with the corresponding topic, so the subscription is automatically created with this step.
+
+
+## Protocol Buffers
+
+We're using protocol buffers to have a consistent data format when sending, retrieving Pub/Sub messages.
+
+- The proto definition file related to Pub/Sub is located [here](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto;drc=9d3780add8c307e7b69a8104508531b41e0d79db).
+- The `scripts/gen_proto.sh` script compiles and puts the generated proto files in `cloud_functions/protobuf/chromiumos/`.

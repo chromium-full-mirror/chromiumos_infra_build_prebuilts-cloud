@@ -10,6 +10,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from lib import config
 from lib import db_connector
 from lib import models
 
@@ -90,7 +91,9 @@ def mock_build_target_profiles_db_connection(
     profiles table.
     """
     attrs = {
-        "query.return_value.get.return_value": mock_build_target_profiles_object,
+        "query.return_value.get.return_value": (
+            mock_build_target_profiles_object
+        ),
         "query.return_value.filter.return_value.all.return_value": [
             mock_build_target_profiles_object
         ],
@@ -131,3 +134,30 @@ def mock_binhosts_db_connection(
     }
 
     return setup_mock_db_connection(attrs)
+
+
+@pytest.fixture
+def mock_config_reader() -> config.ConfigReader:
+    """Fixture to mock the config reader of the config module.
+
+    Mock the `_defaults` method of the config reader to return mocked
+    configuration values.
+
+    Returns:
+        A mock config reader object.
+    """
+    config.ConfigReader._defaults = Mock(
+        return_value={
+            "lookup_service_db": {
+                "database": "test_db",
+                "host": "test_host",
+                "port": "test_port",
+                "username": "test_username",
+                "password": "test_password",
+            },
+            "topics": {
+                "update_snapshot_data": "test_topic_update_snapshot_data"
+            },
+        }
+    )
+    return config.ConfigReader()

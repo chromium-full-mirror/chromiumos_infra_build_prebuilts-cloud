@@ -36,6 +36,6 @@ pip install -r "${DIR}/../cloud_functions/requirements.txt"
 functions-framework \
   --source=${SOURCE_PATH} \
   --target=${FUNCTION_NAME} \
-  --signature-type=http \
+  --signature-type=${FUNCTION_SIGNATURE_TYPE} \
   --port=${FUNCTION_PORT} \
   --debug

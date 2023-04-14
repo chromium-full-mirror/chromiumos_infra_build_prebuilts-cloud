@@ -4,24 +4,37 @@
 
 """Cloud Functions entry point implementations."""
 
-import os
+from cloudevents.http.event import CloudEvent
+import flask.wrappers
+import functions_framework
 
-import flask
-
+from lib import config
 from lib import db_connector
 from lib import secret_manager
+from service import update_operations
 
 
-def main(request: flask.Request) -> str:
+@functions_framework.http
+def lookup_service(request: flask.wrappers.Request) -> str:
     """Responds to HTTP requests for testing. To be removed/updated."""
 
     secrets = secret_manager.LookupServiceDbSecrets()
     lookup_service_db_connection = db_connector.LookupServiceDBConnection(
-        database=secrets.database_name,
-        host=os.environ.get("PREBUILTS_SQL_INSTANCE_HOST"),
-        port=os.environ.get("PREBUILTS_SQL_INSTANCE_PORT"),
-        username=secrets.user,
-        password=secrets.password,
+        **config.READER.get("lookup_service_db")
     )
 
     return secrets.database_name
+
+
+@functions_framework.cloud_event
+def update_service(cloud_event: CloudEvent) -> None:
+    """Perform update operations based on pubsub messages.
+
+    Entry point for the `update_service` cloud function which has subscriptions
+    to different pubsub topics.
+
+    Args:
+        cloud_event: Event received from the pubsub subscription, follows format
+            of the CloudEvents specification.
+    """
+    update_operations.process_pubsub_message(cloud_event)
