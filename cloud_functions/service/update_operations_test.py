@@ -2,14 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+"""Test the update_operations module."""
+
+# Protected access is needed to mock protected members of classes for tests.
+# pylint: disable=protected-access
 
 from typing import List
 from unittest.mock import Mock
-from unittest.mock import patch
 
+# pylint: disable=import-error
 from cloudevents.http.event import CloudEvent
 import pytest
 
+# pylint: enable=import-error
 from lib import config
 from lib import db_connector
 from lib import models

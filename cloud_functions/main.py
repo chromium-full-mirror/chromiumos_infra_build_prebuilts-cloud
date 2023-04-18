@@ -4,10 +4,13 @@
 
 """Cloud Functions entry point implementations."""
 
+
+# pylint: disable=import-error
 from cloudevents.http.event import CloudEvent
 import flask.wrappers
 import functions_framework
 
+# pylint: enable=import-error
 from lib import config
 from lib import db_connector
 from lib import secret_manager
@@ -15,13 +18,17 @@ from service import update_operations
 
 
 @functions_framework.http
-def lookup_service(request: flask.wrappers.Request) -> str:
+def lookup_service(
+    request: flask.wrappers.Request,  # pylint: disable=unused-argument
+) -> str:
     """Responds to HTTP requests for testing. To be removed/updated."""
 
     secrets = secret_manager.LookupServiceDbSecrets()
+    # pylint: disable=unused-variable
     lookup_service_db_connection = db_connector.LookupServiceDBConnection(
         **config.READER.get("lookup_service_db")
     )
+    # pylint: enable=unused-variable
 
     return secrets.database_name
 

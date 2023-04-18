@@ -4,13 +4,22 @@
 
 """Module to hold pytest fixtures."""
 
+# Pytest's method of declaring fixtures causes Pylint to complain about
+# redefined outer names.
+# pylint: disable=redefined-outer-name
+
+# Protected access is needed to mock protected members of classes for tests.
+# pylint: disable=protected-access
+
 
 from typing import Any, Dict, List
 from unittest.mock import Mock
 
+# pylint: disable=import-error
 from cloudevents.http.event import CloudEvent
 import pytest
 
+# pylint: enable=import-error
 from lib import config
 from lib import db_connector
 from lib import models
@@ -75,9 +84,10 @@ def mock_snapshots_db_connection(
         "query.return_value.filter.return_value.all.return_value": [
             mock_snapshot_object
         ],
-        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
-            mock_snapshot_object
-        ],
+        (
+            "query.return_value.filter.return_value.limit.return_value.all."
+            "return_value"
+        ): [mock_snapshot_object],
     }
 
     return setup_mock_db_connection(attrs)
@@ -117,9 +127,10 @@ def mock_build_target_profiles_db_connection(
         "query.return_value.filter.return_value.all.return_value": [
             mock_build_target_profile_object
         ],
-        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
-            mock_build_target_profile_object
-        ],
+        (
+            "query.return_value.filter.return_value.limit.return_value.all."
+            "return_value"
+        ): [mock_build_target_profile_object],
     }
 
     return setup_mock_db_connection(attrs)
@@ -162,9 +173,10 @@ def mock_binhosts_db_connection(
         "query.return_value.filter.return_value.all.return_value": [
             mock_binhost_object
         ],
-        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
-            mock_binhost_object
-        ],
+        (
+            "query.return_value.filter.return_value.limit.return_value.all."
+            "return_value"
+        ): [mock_binhost_object],
     }
 
     return setup_mock_db_connection(attrs)

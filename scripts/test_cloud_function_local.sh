@@ -24,6 +24,7 @@ RED='\033[0;31m'
 
 # Log error messages.
 err() {
+  # shellcheck disable=SC2059
   printf "${RED}[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*\n" >&2
   exit 1
 }
@@ -69,7 +70,7 @@ if [[ "${request_type}" == "lookup" ]]; then
 elif [ "${request_type}" == "update" ]; then
   PAYLOAD_FILE="${DIR}/local_payload.json"
   # Check for scripts/local_payload.json
-  if [ ! -f "$params_file_path" ]; then
+  if [ ! -f "${PAYLOAD_FILE}" ]; then
     err "To invoke the update service, create a scripts/local_payload.json \
 file."
   fi

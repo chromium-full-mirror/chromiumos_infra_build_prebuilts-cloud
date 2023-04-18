@@ -29,13 +29,14 @@ else
   echo "Creating python virtual environment: ${VENV_DIR}"
   "python3" -m venv "${VENV_DIR}"
 fi
+# shellcheck source=../venv/bin/activate
 source "${VENV_DIR}/bin/activate"
 pip install -r "${DIR}/../cloud_functions/requirements.txt"
 
 # Start the cloud function server.
 functions-framework \
-  --source=${SOURCE_PATH} \
-  --target=${FUNCTION_NAME} \
-  --signature-type=${FUNCTION_SIGNATURE_TYPE} \
-  --port=${FUNCTION_PORT} \
+  --source="${SOURCE_PATH}" \
+  --target="${FUNCTION_TARGET}" \
+  --signature-type="${FUNCTION_SIGNATURE_TYPE}" \
+  --port="${FUNCTION_PORT}" \
   --debug

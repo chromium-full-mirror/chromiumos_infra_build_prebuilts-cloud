@@ -7,14 +7,14 @@
 
 from typing import Any, List, Optional
 
+# pylint: disable=import-error
 import sqlalchemy
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import NoResultFound
 import sqlalchemy.orm
 
-from lib.models import Binhosts
-from lib.models import BuildTargetProfiles
-from lib.models import Snapshots
+# pylint: enable=import-error
+from lib import models
 
 
 class DBError(Exception):
@@ -133,7 +133,7 @@ class LookupServiceDBConnection:
         snapshot_num: int,
         external: bool,
         buildbucket_id: int,
-    ) -> Snapshots:
+    ) -> models.Snapshots:
         """Insert a snapshot record.
 
         Args:
@@ -148,7 +148,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the insert operation fails.
         """
-        new_snapshot = Snapshots(
+        new_snapshot = models.Snapshots(
             snapshot_sha=snapshot_sha,
             snapshot_num=snapshot_num,
             external=external,
@@ -160,7 +160,7 @@ class LookupServiceDBConnection:
 
     def snapshots_read(
         self, snapshot_sha: str, required: bool = True
-    ) -> Optional[Snapshots]:
+    ) -> Optional[models.Snapshots]:
         """Read from the snapshots table based on snapshot_sha.
 
         Args:
@@ -175,7 +175,7 @@ class LookupServiceDBConnection:
             NoResultFound: When required=True and no snapshot is found.
         """
         try:
-            result = self._session.query(Snapshots).get(snapshot_sha)
+            result = self._session.query(models.Snapshots).get(snapshot_sha)
             if required and result is None:
                 raise NoResultFound("No snapshot record found.")
             return result
@@ -186,7 +186,7 @@ class LookupServiceDBConnection:
 
     def snapshots_filter(
         self, filter_exp: str, limit: Optional[int] = None
-    ) -> List[Snapshots]:
+    ) -> List[models.Snapshots]:
         """Filter and read from the snapshots table.
 
         Args:
@@ -200,7 +200,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        return self._execute_filter(Snapshots, filter_exp, limit)
+        return self._execute_filter(models.Snapshots, filter_exp, limit)
 
     def snapshots_update(
         self,
@@ -263,7 +263,7 @@ class LookupServiceDBConnection:
         self,
         build_target: str,
         profile: str,
-    ) -> BuildTargetProfiles:
+    ) -> models.BuildTargetProfiles:
         """Insert a build target profile record.
 
         Args:
@@ -277,7 +277,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the insert operation fails.
         """
-        new_build_target_profile = BuildTargetProfiles(
+        new_build_target_profile = models.BuildTargetProfiles(
             build_target=build_target,
             profile=profile,
         )
@@ -289,7 +289,7 @@ class LookupServiceDBConnection:
 
     def build_target_profiles_read(
         self, build_target_profile_id: int, required: bool = True
-    ) -> Optional[Snapshots]:
+    ) -> Optional[models.Snapshots]:
         """Read from build target profiles based on build_target_profile_id.
 
         Args:
@@ -306,7 +306,7 @@ class LookupServiceDBConnection:
                 is found.
         """
         try:
-            result = self._session.query(BuildTargetProfiles).get(
+            result = self._session.query(models.BuildTargetProfiles).get(
                 build_target_profile_id
             )
 
@@ -322,7 +322,7 @@ class LookupServiceDBConnection:
 
     def build_target_profiles_filter(
         self, filter_exp: str, limit: Optional[int] = None
-    ) -> List[BuildTargetProfiles]:
+    ) -> List[models.BuildTargetProfiles]:
         """Filter and read from the build_target_profiles table.
 
         Args:
@@ -336,7 +336,9 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        return self._execute_filter(BuildTargetProfiles, filter_exp, limit)
+        return self._execute_filter(
+            models.BuildTargetProfiles, filter_exp, limit
+        )
 
     def build_target_profiles_update(
         self,
@@ -355,7 +357,7 @@ class LookupServiceDBConnection:
 
         Raises:
             DBError: When no data is sent to update the build target profile
-                record or if there is a database operation error from sqlalchemy.
+                record or if there's a database operation error from sqlalchemy.
             NoResultFound: When no build target profile is found.
         """
         if build_target is None and profile is None:
@@ -405,7 +407,7 @@ class LookupServiceDBConnection:
         buildbucket_id: int,
         complete: bool,
         private: bool,
-    ) -> Binhosts:
+    ) -> models.Binhosts:
         """Insert a binhost record.
 
         Args:
@@ -427,7 +429,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the insert operation fails.
         """
-        new_binhost = Binhosts(
+        new_binhost = models.Binhosts(
             build_target_profile_id=build_target_profile_id,
             snapshot_sha=snapshot_sha,
             gs_bucket_name=gs_bucket_name,
@@ -442,7 +444,7 @@ class LookupServiceDBConnection:
 
     def binhosts_read(
         self, binhost_id: str, required: bool = True
-    ) -> Optional[Binhosts]:
+    ) -> Optional[models.Binhosts]:
         """Read from the binhosts table based on binhost_id.
 
         Args:
@@ -457,7 +459,7 @@ class LookupServiceDBConnection:
             NoResultFound: When required=True and no binhost is found.
         """
         try:
-            result = self._session.query(Binhosts).get(binhost_id)
+            result = self._session.query(models.Binhosts).get(binhost_id)
         except DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the read operation for binhosts."
@@ -469,12 +471,13 @@ class LookupServiceDBConnection:
 
     def binhosts_filter(
         self, filter_exp: str, limit: Optional[int] = None
-    ) -> List[Binhosts]:
+    ) -> List[models.Binhosts]:
         """Filter and read from the binhosts table.
 
         Args:
             filter_exp: Textual sql filter expression that would be in a
                 sql WHERE clause. e.g."private=True AND snapshot_sha='123'".
+            limit: Max number of records to return.
 
         Returns:
             A list of binhost objects based on the filter.
@@ -482,7 +485,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        return self._execute_filter(Binhosts, filter_exp, limit)
+        return self._execute_filter(models.Binhosts, filter_exp, limit)
 
     def binhosts_update(
         self,

@@ -2,8 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from google.cloud import secretmanager
-import pytest
+"""Unit tests for secret_manager."""
+
+
+from google.cloud import secretmanager  # pylint: disable=import-error
 
 from lib import constants
 from lib import secret_manager
@@ -16,7 +18,7 @@ class MockSecretManagerServiceClient:
         self.secret = secret
 
     def access_secret_version(self, request: str) -> str:
-        name = f"projects/{constants.PROJECT_ID}/secrets/{self.secret}/versions/latest"
+        name = f"projects/{constants.PROJECT_ID}/secrets/{self.secret}/versions/latest"  # pylint: disable=line-too-long
         assert request == name
         return self.secret
 

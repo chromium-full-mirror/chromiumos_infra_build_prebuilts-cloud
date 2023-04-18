@@ -2,14 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+"""Test the db_connector module."""
+
+# Protected access is needed to mock protected members of classes for tests.
+# pylint: disable=protected-access
+
 
 from typing import Any, Dict
 from unittest.mock import Mock
 
+# pylint: disable=import-error
 import pytest
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import NoResultFound
 
+# pylint: enable=import-error
 from lib import models
 from lib.db_connector import DBError
 from lib.db_connector import LookupServiceDBConnection
@@ -27,7 +34,7 @@ def test_snapshots_create(
 
     mock_snapshots_db_connection._session.add.assert_called_once()
     mock_snapshots_db_connection._session.commit.assert_called_once()
-    assert type(created_snapshot) == models.Snapshots
+    assert isinstance(created_snapshot, models.Snapshots)
     assert (
         created_snapshot.snapshot_sha,
         created_snapshot.snapshot_num,
@@ -65,7 +72,7 @@ def test_snapshots_read_error(
 ):
     """Test error handling of the read snapshot method."""
     # Return None from sqlalchemy get query.
-    mock_snapshots_db_connection._session.query.return_value.get.return_value = (
+    mock_snapshots_db_connection._session.query.return_value.get.return_value = (  # pylint: disable=line-too-long
         None
     )
 
@@ -161,12 +168,14 @@ def test_build_target_profiles_create(
     )
 
     mock_build_target_profiles_db_connection._session.add.assert_called_once()
+    # pylint: disable=line-too-long
     mock_build_target_profiles_db_connection._session.commit.assert_called_once()
-    assert type(created_build_target_profile) == models.BuildTargetProfiles
+    assert isinstance(created_build_target_profile, models.BuildTargetProfiles)
     assert (
         created_build_target_profile.build_target,
         created_build_target_profile.profile,
     ) == build_target_profile_args
+    # pylint: enable=line-too-long
 
 
 def test_build_target_profiles_create_error(
@@ -206,9 +215,11 @@ def test_build_target_profiles_read_error(
     """Test error handling of the read build target profiles method."""
 
     # Return None from sqlalchemy get query.
+    # pylint: disable=line-too-long
     mock_build_target_profiles_db_connection._session.query.return_value.get.return_value = (
         None
     )
+    # pylint: enable=line-too-long
 
     with pytest.raises(
         NoResultFound,
@@ -282,7 +293,9 @@ def test_build_target_profiles_update(
     mock_build_target_profiles_db_connection.build_target_profiles_update(
         1, "test"
     )
+    # pylint: disable=line-too-long
     mock_build_target_profiles_db_connection._session.commit.assert_called_once()
+    # pylint: enable=line-too-long
 
 
 def test_build_target_profiles_update_error(
@@ -319,8 +332,10 @@ def test_build_target_profiles_delete(
     mock_build_target_profiles_db_connection.build_target_profiles_delete(
         "sha1"
     )
+    # pylint: disable=line-too-long
     mock_build_target_profiles_db_connection._session.delete.assert_called_once()
     mock_build_target_profiles_db_connection._session.commit.assert_called_once()
+    # pylint: enable=line-too-long
 
 
 def test_binhosts_create(
@@ -333,7 +348,7 @@ def test_binhosts_create(
 
     mock_binhosts_db_connection._session.add.assert_called_once()
     mock_binhosts_db_connection._session.commit.assert_called_once()
-    assert type(created_binhost) == models.Binhosts
+    assert isinstance(created_binhost, models.Binhosts)
     assert (
         created_binhost.build_target_profile_id,
         created_binhost.snapshot_sha,

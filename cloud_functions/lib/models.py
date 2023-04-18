@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Model definitions for the SQLAlchemy ORM mapping between the tables and objects."""
+"""Model definitions for SQLAlchemy ORM mapping between tables and objects."""
 
-
+# pylint: disable=import-error
 from sqlalchemy import BIGINT
 from sqlalchemy import BOOLEAN
 from sqlalchemy import Column
@@ -17,10 +17,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
 
+# pylint: enable=import-error
+
 Base = declarative_base()
 
 
 class Versions(Base):
+    """Store versions of database schemas."""
+
     __tablename__ = "versions"
     version = Column(INTEGER, primary_key=True)
     name = Column(VARCHAR(64))
@@ -28,6 +32,8 @@ class Versions(Base):
 
 
 class Snapshots(Base):
+    """Store data related to snapshots."""
+
     __tablename__ = "snapshots"
     snapshot_sha = Column(VARCHAR(40), primary_key=True)
     snapshot_num = Column(INTEGER, nullable=False)
@@ -36,6 +42,8 @@ class Snapshots(Base):
 
 
 class BuildTargetProfiles(Base):
+    """Store all build targets and their profiles."""
+
     __tablename__ = "build_target_profiles"
     build_target_profile_id = Column(INTEGER, primary_key=True)
     build_target = Column(VARCHAR(128), nullable=False)
@@ -43,6 +51,8 @@ class BuildTargetProfiles(Base):
 
 
 class Binhosts(Base):
+    """Store data related to binhosts."""
+
     __tablename__ = "binhosts"
     binhost_id = Column(BIGINT, primary_key=True)
     build_target_profile_id = Column(

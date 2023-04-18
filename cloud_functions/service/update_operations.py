@@ -8,10 +8,12 @@ import base64
 import re
 from typing import Tuple
 
+# pylint: disable=import-error
 from cloudevents.http.event import CloudEvent
 from google.protobuf.message import DecodeError
 from protobuf.chromiumos import prebuilts_cloud_pb2
 
+# pylint: enable=import-error
 from lib import config
 from lib import db_connector
 
@@ -67,14 +69,13 @@ def process_pubsub_message(cloud_event: CloudEvent) -> None:
             of the CloudEvents specification.
 
     Raises:
-       UnknownTopicError: When the received pubsub topic is unknown.
+        UnknownTopicError: When the received pubsub topic is unknown.
     """
     lookup_service_db_connection = db_connector.LookupServiceDBConnection(
         **config.READER.get("lookup_service_db")
     )
 
     msg_data, pubsub_topic_name = _parse_pubsub_msg(cloud_event)
-
     if pubsub_topic_name == config.READER.get("topics")["update_snapshot_data"]:
         update_snapshot_data(lookup_service_db_connection, msg_data)
     elif (
@@ -156,10 +157,16 @@ def update_binhost_data(
             "Unable to parse binhost data from Pub/Sub message."
         ) from err
 
-    build_target_profiles = lookup_service_db_connection.build_target_profiles_filter(
-        f"build_target='{binhost_data.build_target}' AND profile='{binhost_data.profile}'",
-        limit=1,
+    build_target_profiles = (
+        lookup_service_db_connection.build_target_profiles_filter(
+            (
+                f"build_target='{binhost_data.build_target}' AND "
+                f"profile='{binhost_data.profile}'"
+            ),
+            limit=1,
+        )
     )
+
     if build_target_profiles:
         build_target_profile_id = build_target_profiles[
             0

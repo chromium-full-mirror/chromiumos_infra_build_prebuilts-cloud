@@ -5,11 +5,12 @@
 """Functionality for getting secrets using the secretmanager GCP client."""
 
 import os
-from typing import Optional
 
+# pylint: disable=import-error
 from google.cloud import secretmanager
 import google_crc32c
 
+# pylint: enable=import-error
 from lib import constants
 
 
@@ -26,7 +27,7 @@ class LookupServiceDbSecrets:
 
     def __init__(self) -> None:
         """Init method."""
-        self.staging = True if os.environ.get("STAGING") else False
+        self.staging = bool(os.environ.get("STAGING"))
 
     @property
     def database_name(self) -> str:
@@ -67,7 +68,7 @@ def _get_secret(secret: str, version: str = "latest") -> str:
     crc32c.update(response.payload.data)
     if response.payload.data_crc32c != int(crc32c.hexdigest(), 16):
         raise DataCorruptionError(
-            "Data corruption detected accessing secret: %s", secret
+            f"Data corruption detected accessing secret: {secret}"
         )
 
     return response.payload.data.decode("UTF-8")
