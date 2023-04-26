@@ -42,8 +42,11 @@ class ConfigReader:
             },
             "topics": {
                 "update_snapshot_data": os.environ.get(
-                    "TOPIC_UPDATE_SNAPSHOT_DATA"
-                )
+                    "TOPIC_NAME_UPDATE_SNAPSHOT_DATA"
+                ),
+                "update_binhost_data": os.environ.get(
+                    "TOPIC_NAME_UPDATE_BINHOST_DATA"
+                ),
             },
         }
 

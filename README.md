@@ -86,7 +86,9 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
     - STAGING : 1 to denote staging environment.
     - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
     - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
-    - TOPIC_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
+    - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
+        Topic name refers to the complete name that uniquely identifies a Pub/Sub topic.
+    - TOPIC_NAME_UPDATE_BINHOST_DATA : Topic name of the update binhost data Pub/Sub topic.
 - Create a `local_payload.json` file in the `scripts/` folder. This payload will be sent when the function is invoked.
 - Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
 - Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh`

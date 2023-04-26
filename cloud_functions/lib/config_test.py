@@ -13,7 +13,7 @@ def test_get(mock_config_reader: config.ConfigReader):
     """Test the getter method of the config module."""
     assert (
         mock_config_reader.get("topics")["update_snapshot_data"]
-        == "test_topic_update_snapshot_data"
+        == "projects/test-project/topics/test_topic_update_snapshot_data"
     )
 
     # Modify the returned dict and assert that the actual config values are not
@@ -22,7 +22,7 @@ def test_get(mock_config_reader: config.ConfigReader):
     config_topics["update_snapshot_data"] = "new_topic"
     assert (
         mock_config_reader.get("topics")["update_snapshot_data"]
-        == "test_topic_update_snapshot_data"
+        == "projects/test-project/topics/test_topic_update_snapshot_data"
     )
 
 

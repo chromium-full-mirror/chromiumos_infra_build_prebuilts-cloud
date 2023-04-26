@@ -8,6 +8,7 @@
 from typing import Any, Dict, List
 from unittest.mock import Mock
 
+from cloudevents.http.event import CloudEvent
 import pytest
 
 from lib import config
@@ -189,8 +190,46 @@ def mock_config_reader() -> config.ConfigReader:
                 "password": "test_password",
             },
             "topics": {
-                "update_snapshot_data": "test_topic_update_snapshot_data"
+                "update_snapshot_data": "projects/test-project/topics/"
+                "test_topic_update_snapshot_data",
+                "update_binhost_data": "projects/test-project/topics/"
+                "test_topic_update_binhost_data",
             },
         }
     )
     return config.ConfigReader()
+
+
+@pytest.fixture
+def mock_cloud_event() -> CloudEvent:
+    """Fixture to return a mock event for cloud functions."""
+
+    # The data in the below Pub/Sub message decodes to:
+    # {'snapshot_sha': 'test_sha', 'snapshot_num': 1, 'external': True,
+    # 'buildbucket_id': 2}
+    return CloudEvent(
+        {
+            "specversion": "1.0",
+            "id": "test_id",
+            "source": "//pubsub.googleapis.com/projects/test-project/"
+            "topics/test_topic",
+            "type": "google.cloud.pubsub.topic.v1.messagePublished",
+            "datacontenttype": "application/json",
+            "time": "2023-05-09T10:30:56.109Z",
+        },
+        {
+            "message": {
+                "attributes": {
+                    "googclient_schemaencoding": "BINARY",
+                    "googclient_schemarevisionid": "38bc13a5",
+                },
+                "data": "Cgh0ZXN0X3NoYRABGAEgAg==",
+                "messageId": "7636448340173022",
+                "message_id": "7636448340173022",
+                "publishTime": "2023-05-09T10:30:56.109Z",
+                "publish_time": "2023-05-09T10:30:56.109Z",
+            },
+            "subscription": "projects/test_project/subscriptions/"
+            "eventarc-test",
+        },
+    )
