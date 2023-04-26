@@ -98,7 +98,7 @@ class LookupServiceDBConnection:
         snapshot_num: int,
         external: bool,
         buildbucket_id: int,
-    ) -> None:
+    ) -> Snapshots:
         """Insert a snapshot record.
 
         Args:
@@ -106,6 +106,9 @@ class LookupServiceDBConnection:
             snapshot_num: Snapshot number.
             external: Boolean to denote if the snapshot is external.
             buildbucket_id: Id of the annealing build that created the snapshot.
+
+        Returns:
+            The snapshot object that is created.
 
         Raises:
             DBError: When the insert operation fails.
@@ -118,6 +121,7 @@ class LookupServiceDBConnection:
         )
         self._session.add(new_snapshot)
         self._commit_session(error_msg="Unable to create snapshot record.")
+        return new_snapshot
 
     def snapshots_read(
         self, snapshot_sha: str, required: bool = True
@@ -231,13 +235,16 @@ class LookupServiceDBConnection:
         self,
         build_target: str,
         profile: str,
-    ) -> None:
+    ) -> BuildTargetProfiles:
         """Insert a build target profile record.
 
         Args:
             build_target: The system Chrome OS is being built for, also known
                 as board.
             profile: Name of the profile to use with the build_target.
+
+        Returns:
+            The build target profile object that is created.
 
         Raises:
             DBError: When the insert operation fails.
@@ -250,6 +257,7 @@ class LookupServiceDBConnection:
         self._commit_session(
             error_msg="Unable to create build target profile record."
         )
+        return new_build_target_profile
 
     def build_target_profiles_read(
         self, build_target_profile_id: int, required: bool = True
@@ -378,7 +386,7 @@ class LookupServiceDBConnection:
         buildbucket_id: int,
         complete: bool,
         private: bool,
-    ) -> None:
+    ) -> Binhosts:
         """Insert a binhost record.
 
         Args:
@@ -394,6 +402,9 @@ class LookupServiceDBConnection:
                 specified in the packages metadata file.
             private: Bool to indicate if the binhost is private.
 
+        Returns:
+            The binhost object that is created.
+
         Raises:
             DBError: When the insert operation fails.
         """
@@ -408,6 +419,7 @@ class LookupServiceDBConnection:
         )
         self._session.add(new_binhost)
         self._commit_session(error_msg="Unable to create binhost record.")
+        return new_binhost
 
     def binhosts_read(
         self, binhost_id: str, required: bool = True

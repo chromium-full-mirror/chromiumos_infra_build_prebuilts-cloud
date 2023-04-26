@@ -19,9 +19,21 @@ def test_snapshots_create(
     mock_snapshots_db_connection: LookupServiceDBConnection,
 ):
     """Test the create snapshot method."""
-    mock_snapshots_db_connection.snapshots_create("sha1", 1, False, 1)
+    # Positional args for `snapshots_create`.
+    snapshot_args = ("sha1", 1, False, 2)
+    created_snapshot = mock_snapshots_db_connection.snapshots_create(
+        *snapshot_args
+    )
+
     mock_snapshots_db_connection._session.add.assert_called_once()
     mock_snapshots_db_connection._session.commit.assert_called_once()
+    assert type(created_snapshot) == models.Snapshots
+    assert (
+        created_snapshot.snapshot_sha,
+        created_snapshot.snapshot_num,
+        created_snapshot.external,
+        created_snapshot.buildbucket_id,
+    ) == snapshot_args
 
 
 def test_snapshots_create_error(
@@ -117,12 +129,21 @@ def test_build_target_profiles_create(
     mock_build_target_profiles_db_connection: LookupServiceDBConnection,
 ):
     """Test the create build target profiles method."""
-
-    mock_build_target_profiles_db_connection.build_target_profiles_create(
-        "test_build_target", "test_profile"
+    # Positional args for `build_target_profiles_create`.
+    build_target_profile_args = ("test_build_target", "test_profile")
+    created_build_target_profile = (
+        mock_build_target_profiles_db_connection.build_target_profiles_create(
+            *build_target_profile_args
+        )
     )
+
     mock_build_target_profiles_db_connection._session.add.assert_called_once()
     mock_build_target_profiles_db_connection._session.commit.assert_called_once()
+    assert type(created_build_target_profile) == models.BuildTargetProfiles
+    assert (
+        created_build_target_profile.build_target,
+        created_build_target_profile.profile,
+    ) == build_target_profile_args
 
 
 def test_build_target_profiles_create_error(
@@ -258,17 +279,22 @@ def test_binhosts_create(
     mock_binhosts_db_connection: LookupServiceDBConnection,
 ):
     """Test the create binhosts method."""
-    mock_binhosts_db_connection.binhosts_create(
-        build_target_profile_id=2,
-        snapshot_sha="sha1",
-        gs_bucket_name="test_bucket",
-        gs_uri="test_uri",
-        buildbucket_id=3,
-        complete=True,
-        private=True,
-    )
+    # Positional args for `binhosts_create`.
+    binhost_args = (2, "sha1", "test_bucket", "test_uri", 3, True, True)
+    created_binhost = mock_binhosts_db_connection.binhosts_create(*binhost_args)
+
     mock_binhosts_db_connection._session.add.assert_called_once()
     mock_binhosts_db_connection._session.commit.assert_called_once()
+    assert type(created_binhost) == models.Binhosts
+    assert (
+        created_binhost.build_target_profile_id,
+        created_binhost.snapshot_sha,
+        created_binhost.gs_bucket_name,
+        created_binhost.gs_uri,
+        created_binhost.buildbucket_id,
+        created_binhost.complete,
+        created_binhost.private,
+    ) == binhost_args
 
 
 def test_binhosts_create_error(
