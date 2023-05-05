@@ -5,7 +5,7 @@
 """Module to hold pytest fixtures."""
 
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest.mock import Mock
 
 import pytest
@@ -22,6 +22,14 @@ def mock_snapshot_object() -> models.Snapshots:
     return models.Snapshots(
         snapshot_sha="", snapshot_num=1, external=True, buildbucket_id=1
     )
+
+
+@pytest.fixture
+def mock_snapshot_objects_list(
+    mock_snapshot_object: models.Snapshots,
+) -> List[models.Snapshots]:
+    """Fixture to return a list of mock snapshot objects."""
+    return [mock_snapshot_object]
 
 
 def setup_mock_db_connection(
@@ -66,13 +74,16 @@ def mock_snapshots_db_connection(
         "query.return_value.filter.return_value.all.return_value": [
             mock_snapshot_object
         ],
+        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
+            mock_snapshot_object
+        ],
     }
 
     return setup_mock_db_connection(attrs)
 
 
 @pytest.fixture
-def mock_build_target_profiles_object() -> models.BuildTargetProfiles:
+def mock_build_target_profile_object() -> models.BuildTargetProfiles:
     """Fixture to return a mock build target profile object."""
     return models.BuildTargetProfiles(
         build_target_profile_id=1,
@@ -82,8 +93,16 @@ def mock_build_target_profiles_object() -> models.BuildTargetProfiles:
 
 
 @pytest.fixture
+def mock_build_target_profile_objects_list(
+    mock_build_target_profile_object: models.BuildTargetProfiles,
+) -> List[models.BuildTargetProfiles]:
+    """Fixture to return a list of mock build_target_profile objects."""
+    return [mock_build_target_profile_object]
+
+
+@pytest.fixture
 def mock_build_target_profiles_db_connection(
-    mock_build_target_profiles_object: models.BuildTargetProfiles,
+    mock_build_target_profile_object: models.BuildTargetProfiles,
 ) -> db_connector.LookupServiceDBConnection:
     """Fixture to mock a db connection configured for build target profiles.
 
@@ -92,10 +111,13 @@ def mock_build_target_profiles_db_connection(
     """
     attrs = {
         "query.return_value.get.return_value": (
-            mock_build_target_profiles_object
+            mock_build_target_profile_object
         ),
         "query.return_value.filter.return_value.all.return_value": [
-            mock_build_target_profiles_object
+            mock_build_target_profile_object
+        ],
+        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
+            mock_build_target_profile_object
         ],
     }
 
@@ -118,6 +140,14 @@ def mock_binhost_object() -> models.Binhosts:
 
 
 @pytest.fixture
+def mock_binhost_objects_list(
+    mock_binhost_object: models.Binhosts,
+) -> List[models.Binhosts]:
+    """Fixture to return a list of mock binhost objects."""
+    return [mock_binhost_object]
+
+
+@pytest.fixture
 def mock_binhosts_db_connection(
     mock_binhost_object: models.Binhosts,
 ) -> db_connector.LookupServiceDBConnection:
@@ -129,6 +159,9 @@ def mock_binhosts_db_connection(
     attrs = {
         "query.return_value.get.return_value": mock_binhost_object,
         "query.return_value.filter.return_value.all.return_value": [
+            mock_binhost_object
+        ],
+        "query.return_value.filter.return_value.limit.return_value.all.return_value": [
             mock_binhost_object
         ],
     }

@@ -5,7 +5,7 @@
 """Functionality for performing database operations."""
 
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import sqlalchemy
 from sqlalchemy.exc import DBAPIError
@@ -92,6 +92,41 @@ class LookupServiceDBConnection:
         except DBAPIError as sql_error:
             raise DBError(error_msg) from sql_error
 
+    def _execute_filter(
+        self,
+        model: sqlalchemy.orm.decl_api.DeclarativeMeta,
+        filter_exp: str,
+        limit: Optional[int] = None,
+    ) -> List[Any]:
+        """Filter and read data from a specific table.
+
+        Generic method to execute a filter on a table. The class of the
+        SQLAlchemy ORM model must be passed as a reference.
+
+        Args:
+            model: SQLAlchemy model to apply the filter to.
+            filter_exp: Textual sql filter expression that would be in a sql
+                WHERE clause. e.g. "external=True AND buildbucket_id='123'". The
+                fields in the expression must be specific to the table.
+            limit: Max number of records to return.
+
+        Returns:
+            A list of model objects based on the filter.
+
+        Raises:
+            DBError: When the sql filter query fails.
+        """
+        query = self._session.query(model).filter(sqlalchemy.text(filter_exp))
+        if limit:
+            query = query.limit(limit)
+        try:
+            result = query.all()
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when executing the filter query."
+            ) from sql_error
+        return result
+
     def snapshots_create(
         self,
         snapshot_sha: str,
@@ -149,12 +184,15 @@ class LookupServiceDBConnection:
                 "Error when executing the read operation."
             ) from sql_error
 
-    def snapshots_filter(self, filter_exp: str) -> List[Snapshots]:
+    def snapshots_filter(
+        self, filter_exp: str, limit: Optional[int] = None
+    ) -> List[Snapshots]:
         """Filter and read from the snapshots table.
 
         Args:
             filter_exp: Textual sql filter expression that would be in a sql
                 WHERE clause. e.g. "external=True AND buildbucket_id='123'".
+            limit: Max number of records to return.
 
         Returns:
             A list of Snapshot objects based on the filter.
@@ -162,17 +200,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        try:
-            result = (
-                self._session.query(Snapshots)
-                .filter(sqlalchemy.text(filter_exp))
-                .all()
-            )
-            return result
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when executing the filter query."
-            ) from sql_error
+        return self._execute_filter(Snapshots, filter_exp, limit)
 
     def snapshots_update(
         self,
@@ -293,13 +321,14 @@ class LookupServiceDBConnection:
             ) from sql_error
 
     def build_target_profiles_filter(
-        self, filter_exp: str
+        self, filter_exp: str, limit: Optional[int] = None
     ) -> List[BuildTargetProfiles]:
         """Filter and read from the build_target_profiles table.
 
         Args:
             filter_exp: Textual sql filter expression that would be in a
                 sql WHERE clause. e.g."build_target='brya'".
+            limit: Max number of records to return.
 
         Returns:
             A list of build target profile objects based on the filter.
@@ -307,17 +336,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        try:
-            result = (
-                self._session.query(BuildTargetProfiles)
-                .filter(sqlalchemy.text(filter_exp))
-                .all()
-            )
-            return result
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when executing the filter query."
-            ) from sql_error
+        return self._execute_filter(BuildTargetProfiles, filter_exp, limit)
 
     def build_target_profiles_update(
         self,
@@ -448,7 +467,9 @@ class LookupServiceDBConnection:
             raise NoResultFound("No binhost record found.")
         return result
 
-    def binhosts_filter(self, filter_exp: str) -> List[Binhosts]:
+    def binhosts_filter(
+        self, filter_exp: str, limit: Optional[int] = None
+    ) -> List[Binhosts]:
         """Filter and read from the binhosts table.
 
         Args:
@@ -461,17 +482,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        try:
-            result = (
-                self._session.query(Binhosts)
-                .filter(sqlalchemy.text(filter_exp))
-                .all()
-            )
-        except DBAPIError as sql_error:
-            raise DBError(
-                "Error when executing the filter query."
-            ) from sql_error
-        return result
+        return self._execute_filter(Binhosts, filter_exp, limit)
 
     def binhosts_update(
         self,

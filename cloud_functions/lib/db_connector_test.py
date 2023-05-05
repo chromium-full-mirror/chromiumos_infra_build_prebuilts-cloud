@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Unit tests for db_connector."""
 
+from typing import Any, Dict
 from unittest.mock import Mock
 
 import pytest
@@ -73,14 +73,37 @@ def test_snapshots_read_error(
         mock_snapshots_db_connection.snapshots_read("sha1")
 
 
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        ({"filter_exp": "snapshot_num == 1"}, "mock_snapshot_objects_list"),
+        (
+            {"filter_exp": "snapshot_num == 1", "limit": 1},
+            "mock_snapshot_objects_list",
+        ),
+    ],
+)
 def test_snapshots_filter(
+    test_input: Dict[str, Any],
+    expected: str,
+    request,
     mock_snapshots_db_connection: LookupServiceDBConnection,
-    mock_snapshot_object: models.Snapshots,
 ):
-    """Test the filter snapshot method."""
-    assert mock_snapshots_db_connection.snapshots_filter("") == [
-        mock_snapshot_object
-    ]
+    """Test the filter snapshot method.
+
+    Use pytest's parametrize for different test cases.
+
+    Args:
+        test_input: Input args to the snapshots_filter function.
+        expected: Name of the pytest fixture that returns the expected value.
+        request: Special fixture of type `RequestFixture`, it is dynamically
+            imported from pytest.
+        mock_snapshots_db_connection: Pytest fixture for a mock db connection
+            configured for the snapshots table.
+    """
+    assert mock_snapshots_db_connection.snapshots_filter(
+        **test_input
+    ) == request.getfixturevalue(expected)
 
 
 def test_snapshots_update(
@@ -167,13 +190,13 @@ def test_build_target_profiles_create_error(
 
 def test_build_target_profiles_read(
     mock_build_target_profiles_db_connection: LookupServiceDBConnection,
-    mock_build_target_profiles_object: models.BuildTargetProfiles,
+    mock_build_target_profile_object: models.BuildTargetProfiles,
 ):
     """Test the read build target profiles method."""
 
     assert (
         mock_build_target_profiles_db_connection.build_target_profiles_read(1)
-        == mock_build_target_profiles_object
+        == mock_build_target_profile_object
     )
 
 
@@ -212,17 +235,42 @@ def test_build_target_profiles_read_error(
         )
 
 
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (
+            {"filter_exp": "profile == test_profile"},
+            "mock_build_target_profile_objects_list",
+        ),
+        (
+            {"filter_exp": "profile == test_profile", "limit": 1},
+            "mock_build_target_profile_objects_list",
+        ),
+    ],
+)
 def test_build_target_profiles_filter(
+    test_input: Dict[str, Any],
+    expected: str,
+    request,
     mock_build_target_profiles_db_connection: LookupServiceDBConnection,
-    mock_build_target_profiles_object: models.BuildTargetProfiles,
 ):
-    """Test the filter build target profiles method."""
+    """Test the filter build target profiles method.
 
+    Use pytest's parametrize for different test cases.
+
+    Args:
+        test_input: Input args to the build_target_profiles_filter function.
+        expected: Name of the pytest fixture that returns the expected value.
+        request: Special fixture of type `RequestFixture`, it is dynamically
+            imported from pytest.
+        mock_build_target_profiles_db_connection: Pytest fixture for a mock db
+            connection configured for the build_target_profiles table.
+    """
     assert (
         mock_build_target_profiles_db_connection.build_target_profiles_filter(
-            ""
+            **test_input
         )
-        == [mock_build_target_profiles_object]
+        == request.getfixturevalue(expected)
     )
 
 
@@ -339,14 +387,37 @@ def test_binhosts_read_error(
         mock_binhosts_db_connection.binhosts_read(1)
 
 
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (({"filter_exp": "binhost_id == 1"}), "mock_binhost_objects_list"),
+        (
+            ({"filter_exp": "binhost_id == 1", "limit": 1}),
+            "mock_binhost_objects_list",
+        ),
+    ],
+)
 def test_binhosts_filter(
+    test_input: Dict[str, Any],
+    expected: str,
+    request,
     mock_binhosts_db_connection: LookupServiceDBConnection,
-    mock_binhost_object: models.Binhosts,
 ):
-    """Test the filter binhosts method."""
-    assert mock_binhosts_db_connection.binhosts_filter("binhost_id=1") == [
-        mock_binhost_object
-    ]
+    """Test the filter binhosts method.
+
+    Use pytest's parametrize for different test cases.
+
+    Args:
+        test_input: Input args to the binhosts_filter function.
+        expected: Name of the pytest fixture that returns the expected value.
+        request: Special fixture of type `RequestFixture`, it is dynamically
+            imported from pytest.
+        mock_binhosts_db_connection: Pytest fixture for a mock db connection
+            configured for the binhosts table.
+    """
+    assert mock_binhosts_db_connection.binhosts_filter(
+        **test_input
+    ) == request.getfixturevalue(expected)
 
 
 def test_binhosts_update(
