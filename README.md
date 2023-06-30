@@ -77,7 +77,7 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
         ```
     - The database should now be accessible locally through the proxy.
 - Install [functions-framework](https://pypi.org/project/functions-framework/).
-- The default values for env variables are in the `scripts/.env.defaults` file. Add a `scripts/.env.local` file to override the values, this can be helpful for local testing without checking it into the repo. Env variables used:
+- The default values for env variables are in the `scripts/.env.defaults` file. Add a `scripts/.env.local` file to override the values. This can be helpful for local testing without checking it into the repo. Env variables used:
     - FUNCTION_SOURCE_FILE : Source file for the cloud function.
     - FUNCTION_TARGET : Entry point for the cloud function.
     - FUNCTION_PORT : Port to run the function on.
@@ -89,9 +89,14 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
     - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
         Topic name refers to the complete name that uniquely identifies a Pub/Sub topic.
     - TOPIC_NAME_UPDATE_BINHOST_DATA : Topic name of the update binhost data Pub/Sub topic.
-- Create a `local_payload.json` file in the `scripts/` folder. This payload will be sent when the function is invoked.
 - Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
-- Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh`
+    - In `.env.local`, update `FUNCTION_TARGET` and `FUNCTION_SIGNATURE_TYPE` based on whether you want to run the lookup or the update service.
+    - For running the lookup function, `FUNCTION_TARGET=lookup_service` and `FUNCTION_SIGNATURE_TYPE=http`
+    - For running the update function, `FUNCTION_TARGET=update_service` and `FUNCTION_SIGNATURE_TYPE=cloud_event`
+- Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh -r lookup`
+    - Suitable command line args need to be passed to call the lookup/update
+    service with the required inputs.
+    - More details in the `./scripts/test_cloud_function_local.sh` file.
 
 Note: The cloud function auto restarts when any of the source files are changed.
 

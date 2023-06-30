@@ -11,4 +11,5 @@ __pycache__/
 # files for local development
 .env.local
 venv/
-local_payload.json
+scripts/local_payload.json
+scripts/query_params.txt

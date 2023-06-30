@@ -1,0 +1,24 @@
+{
+  "data": {
+    "message": {
+      "attributes": {
+        "googclient_schemaencoding": "BINARY",
+        "googclient_schemarevisionid": "898a6510",
+        "gs_uri": "test_gs_uri",
+        "timestamp": "2023-05-11 11:57:19.888779+00:00"
+      },
+      "data": "ChF0ZXN0X2J1aWxkX3RhcmdldBIMdGVzdF9wcm9maWxlGhF0ZXN0X3NuYXBzaG90X3NoYSILdGVzdF9nc191cmkqC3Rlc3RfYnVja2V0MAE4AQ==",
+      "messageId": "7660180100336264",
+      "message_id": "7660180100336264",
+      "publishTime": "2023-05-11T11:57:20.087Z",
+      "publish_time": "2023-05-11T11:57:20.087Z"
+    },
+    "subscription": "projects/chromeos-prebuilts/subscriptions/eventarc-us-central1-staging-update-service-binhost-data-704995-sub-364"
+  },
+  "datacontenttype": "application/json",
+  "id": "7660180100336264",
+  "source": "//pubsub.googleapis.com/projects/chromeos-prebuilts/topics/staging-update_binhost_data",
+  "specversion": "1.0",
+  "time": "2023-05-11T11:57:20.087Z",
+  "type": "google.cloud.pubsub.topic.v1.messagePublished"
+}
