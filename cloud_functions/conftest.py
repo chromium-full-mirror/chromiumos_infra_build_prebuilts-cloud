@@ -71,6 +71,12 @@ def setup_mock_db_connection(
 
 
 @pytest.fixture
+def mock_db_connection() -> db_connector.LookupServiceDBConnection:
+    """Fixture to mock a generic db connection to the `lookup_service` DB."""
+    return setup_mock_db_connection({})
+
+
+@pytest.fixture
 def mock_snapshots_db_connection(
     mock_snapshot_object: models.Snapshots,
 ) -> db_connector.LookupServiceDBConnection:
@@ -148,6 +154,19 @@ def mock_binhost_object() -> models.Binhosts:
         buildbucket_id=3,
         complete=True,
         private=True,
+    )
+
+
+@pytest.fixture
+def mock_query_binhosts_object() -> models.Binhosts:
+    """Fixture to return a mock binhost object for `query_binhosts`.
+
+    Return a mock binhost object that would be returned by the
+    `db_connector.LookupServiceDBConnection.query_binhosts` method. It contains
+    a subset of the columns present in the `binhosts` table.
+    """
+    return models.Binhosts(
+        binhost_id=1, gs_uri="test_uri", created_at=1690272554.842769
     )
 
 

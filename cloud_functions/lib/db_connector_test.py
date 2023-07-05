@@ -475,3 +475,32 @@ def test_binhosts_delete(
     mock_binhosts_db_connection.binhosts_delete(1)
     mock_binhosts_db_connection._session.delete.assert_called_once()
     mock_binhosts_db_connection._session.commit.assert_called_once()
+
+
+def test_query_binhosts(
+    mock_query_binhosts_object: models.Binhosts,
+    mock_db_connection: LookupServiceDBConnection,
+):
+    """Test the custom method to query binhosts."""
+    # Mock the response from the SQL query.
+    mock_db_connection._session.query.return_value.from_statement.return_value.all.return_value = [  # pylint: disable=line-too-long
+        mock_query_binhosts_object
+    ]
+    assert mock_db_connection.query_binhosts(
+        "test_bucket", ["test_sha"], 1, False
+    ) == [mock_query_binhosts_object]
+
+
+def test_query_binhosts_error(
+    mock_db_connection: LookupServiceDBConnection,
+):
+    """Test error handling of the query binhosts method."""
+    # Force an error from the SQL query.
+    mock_db_connection._session.query.return_value.from_statement.return_value.all = Mock(  # pylint: disable=line-too-long
+        side_effect=DBAPIError("statement", None, "db error")
+    )
+
+    with pytest.raises(
+        DBError, match=r"^Error when executing the sql query\.$"
+    ):
+        mock_db_connection.query_binhosts("test_bucket", ["test_sha"], 1, False)

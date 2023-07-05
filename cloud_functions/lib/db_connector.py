@@ -127,6 +127,29 @@ class LookupServiceDBConnection:
             ) from sql_error
         return result
 
+    def _execute_query(
+        self,
+        sql_query: sqlalchemy.orm.query.Query,
+    ) -> List[Any]:
+        """Execute a SQL query.
+
+        Generic method to execute a SQL query.
+
+        Args:
+            sql_query: sql query to be executed.
+
+        Returns:
+            A list of SQLAlchemy objects.
+
+        Raises:
+            DBError: When the sql query fails.
+        """
+        try:
+            result = sql_query.all()
+        except DBAPIError as sql_error:
+            raise DBError("Error when executing the sql query.") from sql_error
+        return result
+
     def snapshots_create(
         self,
         snapshot_sha: str,
@@ -562,3 +585,54 @@ class LookupServiceDBConnection:
         self._commit_session(
             error_msg="Error when deleting the binhost record."
         )
+
+    def query_binhosts(
+        self,
+        gs_bucket_name: str,
+        snapshot_shas: List[str],
+        build_target_profile_id: int,
+        private: bool,
+    ) -> List[models.Binhosts]:
+        """Query and return binhosts based on the filter parameters.
+
+        Execute a custom query to filter binhosts.
+
+        Args:
+            gs_bucket_name: Name of the google storage bucket which contains the
+                binhosts (e.g. "chromeos-prebuilts" in
+                gs://chromeos-prebuilts/binhosts/..).
+            snapshot_shas: List of snapshot SHAs of the binhosts.
+            build_target_profile_id: Ids of the build target profiles of the
+                binhosts.
+            private: True if the binhosts are private.
+
+        Returns:
+            A list of binhost records, each containing the `binhost_id`,
+            `gs_uri` and `created_at` fields. The list could be empty if there
+            are no matching binhosts.
+
+        Raises:
+            DBError: When the sql query fails.
+        """
+        # Construct string of snapshot SHAs, to be used in the SQL query.
+        snapshot_shas_formatted = ",".join(f"'{x}'" for x in snapshot_shas)
+
+        statement = sqlalchemy.text(
+            "SELECT binhost_id, gs_uri, "
+            "EXTRACT(EPOCH FROM created_at) AS created_at "
+            "FROM binhosts "
+            f"WHERE gs_bucket_name='{gs_bucket_name}' AND "
+            f"snapshot_sha IN ({snapshot_shas_formatted}) AND "
+            f"build_target_profile_id={build_target_profile_id} AND "
+            f"private={private} "
+            "ORDER BY created_at DESC"
+        )
+        # Specify the columns for SQLAlchemy ORM mapping.
+        statement = statement.columns(
+            models.Binhosts.binhost_id,
+            models.Binhosts.gs_uri,
+            models.Binhosts.created_at,
+        )
+        query = self._session.query(models.Binhosts).from_statement(statement)
+
+        return self._execute_query(query)

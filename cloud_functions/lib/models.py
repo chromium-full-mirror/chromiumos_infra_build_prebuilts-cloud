@@ -39,6 +39,7 @@ class Snapshots(Base):
     snapshot_num = Column(INTEGER, nullable=False)
     external = Column(BOOLEAN, nullable=False)
     buildbucket_id = Column(BIGINT, nullable=False)
+    created_at = Column(TIMESTAMP)
 
 
 class BuildTargetProfiles(Base):
@@ -67,3 +68,4 @@ class Binhosts(Base):
     complete = Column(BOOLEAN, nullable=False, default=True)
     private = Column(BOOLEAN, nullable=False)
     last_accessed = Column(TIMESTAMP)
+    created_at = Column(TIMESTAMP)
