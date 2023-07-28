@@ -504,3 +504,27 @@ def test_query_binhosts_error(
         DBError, match=r"^Error when executing the sql query\.$"
     ):
         mock_db_connection.query_binhosts("test_bucket", ["test_sha"], 1, False)
+
+
+def test_update_binhosts_last_accessed(
+    mock_db_connection: LookupServiceDBConnection,
+):
+    """Test the `update_binhosts_last_accessed` method."""
+    mock_db_connection._session.execute = Mock()
+    mock_db_connection.update_binhosts_last_accessed([1, 2])
+
+    mock_db_connection._session.execute.assert_called_once()
+
+
+def test_update_binhosts_last_accessed_error(
+    mock_db_connection: LookupServiceDBConnection,
+):
+    """Test error handling of the `update_binhosts_last_accessed` method."""
+    mock_db_connection._session.execute = Mock(
+        side_effect=DBAPIError("statement", None, "db error")
+    )
+
+    with pytest.raises(
+        DBError, match=r"^Error when executing the sql statement\.$"
+    ):
+        mock_db_connection.update_binhosts_last_accessed([1, 2])

@@ -136,7 +136,7 @@ class LookupServiceDBConnection:
         Generic method to execute a SQL query.
 
         Args:
-            sql_query: sql query to be executed.
+            sql_query: SQL query to be executed.
 
         Returns:
             A list of SQLAlchemy objects.
@@ -636,3 +636,29 @@ class LookupServiceDBConnection:
         query = self._session.query(models.Binhosts).from_statement(statement)
 
         return self._execute_query(query)
+
+    def update_binhosts_last_accessed(self, binhost_ids: List[int]) -> None:
+        """Update the `last_accessed` column to the current timestamp.
+
+        Args:
+            binhost_ids: List of binhost IDs.
+
+        Raises:
+            DBError: When the sql execution fails.
+        """
+        # Construct string of binhost IDs, to be used in the SQL query.
+        binhost_ids_formatted = ",".join(f"{x}" for x in binhost_ids)
+
+        statement = sqlalchemy.text(
+            "UPDATE binhosts "
+            "SET last_accessed = CURRENT_TIMESTAMP "
+            f"WHERE binhost_id IN ({binhost_ids_formatted})"
+        )
+
+        try:
+            self._session.execute(statement)
+            self._session.close()
+        except DBAPIError as sql_error:
+            raise DBError(
+                "Error when executing the sql statement."
+            ) from sql_error

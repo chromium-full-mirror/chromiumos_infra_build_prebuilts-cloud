@@ -169,5 +169,15 @@ Steps for setting up Pub/Sub topics (this needs to be done for each topic):
 
 We're using protocol buffers to have a consistent data format when sending, retrieving Pub/Sub messages.
 
-- The proto definition file related to Pub/Sub is located [here](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto;drc=9d3780add8c307e7b69a8104508531b41e0d79db).
+- The proto definition file related to Pub/Sub is located [here](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
 - The `scripts/gen_proto.sh` script compiles and puts the generated proto files in `cloud_functions/protobuf/chromiumos/`.
+
+
+## Binhost Lookup Service API
+
+The binhost lookup service is a HTTP GET endpoint running in a cloud function. The protocol buffer definitions for the request and response are defined in [prebuilts_cloud.proto](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
+
+The query parameter to be sent with the request:
+- "filter": A `LookupBinhostsRequest` object encoded as a URL safe base64 byte object.
+
+The response is a `LookupBinhostsResponse` object encoded as a URL safe base64 byte object, sent in the response body.

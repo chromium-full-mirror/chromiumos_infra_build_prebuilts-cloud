@@ -12,17 +12,26 @@
 # pylint: disable=protected-access
 
 
+import base64
+import datetime
+import decimal
 from typing import Any, Dict, List
-from unittest.mock import Mock
+from unittest import mock
 
 # pylint: disable=import-error
 from cloudevents.http.event import CloudEvent
+from google.protobuf import timestamp_pb2
+from protobuf.chromiumos import prebuilts_cloud_pb2
 import pytest
 
 # pylint: enable=import-error
 from lib import config
 from lib import db_connector
 from lib import models
+
+
+# Timestamps used in these fixtures, all in ISO-8601 format.
+MOCK_QUERY_BINHOSTS_OBJECT_CREATED_TIME = "2023-07-25T08:09:14.842769"
 
 
 @pytest.fixture
@@ -57,15 +66,15 @@ def setup_mock_db_connection(
     Returns:
         A mock db connection.
     """
-    # Mock the _get_engine menthod of LookupServiceDBConnection.
-    db_connector.LookupServiceDBConnection._get_engine = Mock()
+    # Mock the _get_engine method of LookupServiceDBConnection.
+    db_connector.LookupServiceDBConnection._get_engine = mock.Mock()
 
     lookup_service_db_connection = db_connector.LookupServiceDBConnection(
         "", "", 0, "", ""
     )
 
     # Mock the _session attribute to have mock db responses from sqlalchemy.
-    lookup_service_db_connection._session = Mock(**session_attrs)
+    lookup_service_db_connection._session = mock.Mock(**session_attrs)
 
     return lookup_service_db_connection
 
@@ -165,8 +174,11 @@ def mock_query_binhosts_object() -> models.Binhosts:
     `db_connector.LookupServiceDBConnection.query_binhosts` method. It contains
     a subset of the columns present in the `binhosts` table.
     """
+    created_at = datetime.datetime.fromisoformat(
+        MOCK_QUERY_BINHOSTS_OBJECT_CREATED_TIME
+    ).timestamp()
     return models.Binhosts(
-        binhost_id=1, gs_uri="test_uri", created_at=1690272554.842769
+        binhost_id=1, gs_uri="test_uri", created_at=created_at
     )
 
 
@@ -211,7 +223,7 @@ def mock_config_reader() -> config.ConfigReader:
     Returns:
         A mock config reader object.
     """
-    config.ConfigReader._defaults = Mock(
+    config.ConfigReader._defaults = mock.Mock(
         return_value={
             "lookup_service_db": {
                 "database": "test_db",
@@ -264,3 +276,77 @@ def mock_cloud_event() -> CloudEvent:
             "eventarc-test",
         },
     )
+
+
+@pytest.fixture
+def mock_lookup_binhosts_request_b64() -> bytes:
+    """Fixture to mock a binhosts lookup request.
+
+    Returns:
+        A LookupBinhostsRequest object encoded with base64, in bytes.
+    """
+    req = prebuilts_cloud_pb2.LookupBinhostsRequest(
+        gs_bucket_name="test_bucket",
+        snapshot_shas=["test_sha"],
+        build_target="test_target",
+        profile="base",
+        private=False,
+    )
+    msg_serialized = req.SerializeToString()
+    msg_b64 = base64.urlsafe_b64encode(msg_serialized)
+
+    return msg_b64
+
+
+@pytest.fixture
+def mock_lookup_binhosts_response_b64(
+    mock_query_binhosts_object: prebuilts_cloud_pb2.LookupBinhostsResponse.Binhost,  # pylint: disable=line-too-long
+) -> bytes:
+    """Fixture to mock a lookup binhosts response.
+
+    Returns:
+        A LookupBinhostsResponse object encoded with base64, in bytes.
+    """
+    binhosts = [mock_query_binhosts_object]
+
+    # Construct a LookupBinhostsResponse object.
+    response = prebuilts_cloud_pb2.LookupBinhostsResponse()
+    for binhost in binhosts:
+        # postgres stores timestamps with microsecond precision, so creating a
+        # `timestamp_pb2.Timestamp` object from microseconds.
+        created_at = timestamp_pb2.Timestamp()
+        created_at.FromMicroseconds(
+            int(decimal.Decimal(binhost.created_at) * decimal.Decimal(1e6))
+        )
+        response.binhosts.append(
+            prebuilts_cloud_pb2.LookupBinhostsResponse.Binhost(
+                binhost_id=binhost.binhost_id,
+                gs_uri=binhost.gs_uri,
+                created_at=created_at,
+            )
+        )
+
+    # Encode the protobuf message with base64.
+    return base64.urlsafe_b64encode(response.SerializeToString())
+
+
+@pytest.fixture
+def mock_db_connection_lookup_binhosts(
+    mock_query_binhosts_object: models.Binhosts,
+    mock_build_target_profile_objects_list: List[models.BuildTargetProfiles],
+) -> mock.Mock:
+    """Mock the different database calls from the `lookup_binhosts` function.
+
+    This fixture is specific to the database calls in the
+    `service.lookup_operations.lookup_binhosts` function.
+    """
+    mock_db_connection = mock.Mock()
+    mock_db_connection.build_target_profiles_filter.return_value = (
+        mock_build_target_profile_objects_list
+    )
+    mock_db_connection.query_binhosts.return_value = [
+        mock_query_binhosts_object
+    ]
+    mock_db_connection.update_binhosts_last_accessed = mock.Mock()
+
+    return mock_db_connection
