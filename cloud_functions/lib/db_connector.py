@@ -9,8 +9,7 @@ from typing import Any, List, Optional
 
 # pylint: disable=import-error
 import sqlalchemy
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.exc import NoResultFound
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 # pylint: enable=import-error
@@ -89,7 +88,7 @@ class LookupServiceDBConnection:
         """
         try:
             self._session.commit()
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(error_msg) from sql_error
 
     def _execute_filter(
@@ -121,7 +120,7 @@ class LookupServiceDBConnection:
             query = query.limit(limit)
         try:
             result = query.all()
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the filter query."
             ) from sql_error
@@ -146,7 +145,7 @@ class LookupServiceDBConnection:
         """
         try:
             result = sql_query.all()
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError("Error when executing the sql query.") from sql_error
         return result
 
@@ -200,9 +199,9 @@ class LookupServiceDBConnection:
         try:
             result = self._session.query(models.Snapshots).get(snapshot_sha)
             if required and result is None:
-                raise NoResultFound("No snapshot record found.")
+                raise sqlalchemy.exc.NoResultFound("No snapshot record found.")
             return result
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the read operation."
             ) from sql_error
@@ -334,10 +333,12 @@ class LookupServiceDBConnection:
             )
 
             if required and result is None:
-                raise NoResultFound("No build target profile record found.")
+                raise sqlalchemy.exc.NoResultFound(
+                    "No build target profile record found."
+                )
 
             return result
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the read operation for build target"
                 " profiles."
@@ -483,13 +484,13 @@ class LookupServiceDBConnection:
         """
         try:
             result = self._session.query(models.Binhosts).get(binhost_id)
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the read operation for binhosts."
             ) from sql_error
 
         if required and result is None:
-            raise NoResultFound("No binhost record found.")
+            raise sqlalchemy.exc.NoResultFound("No binhost record found.")
         return result
 
     def binhosts_filter(
@@ -658,7 +659,7 @@ class LookupServiceDBConnection:
         try:
             self._session.execute(statement)
             self._session.close()
-        except DBAPIError as sql_error:
+        except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the sql statement."
             ) from sql_error

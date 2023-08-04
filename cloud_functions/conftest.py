@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 from unittest import mock
 
 # pylint: disable=import-error
-from cloudevents.http.event import CloudEvent
+from cloudevents.http import event
 from google.protobuf import timestamp_pb2
 from protobuf.chromiumos import prebuilts_cloud_pb2
 import pytest
@@ -244,13 +244,13 @@ def mock_config_reader() -> config.ConfigReader:
 
 
 @pytest.fixture
-def mock_cloud_event() -> CloudEvent:
+def mock_cloud_event() -> event.CloudEvent:
     """Fixture to return a mock event for cloud functions."""
 
     # The data in the below Pub/Sub message decodes to:
     # {'snapshot_sha': 'test_sha', 'snapshot_num': 1, 'external': True,
     # 'buildbucket_id': 2}
-    return CloudEvent(
+    return event.CloudEvent(
         {
             "specversion": "1.0",
             "id": "test_id",

@@ -9,21 +9,19 @@
 
 
 from typing import Any, Dict
-from unittest.mock import Mock
+from unittest import mock
 
 # pylint: disable=import-error
 import pytest
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.exc import NoResultFound
+import sqlalchemy.exc
 
 # pylint: enable=import-error
+from lib import db_connector
 from lib import models
-from lib.db_connector import DBError
-from lib.db_connector import LookupServiceDBConnection
 
 
 def test_snapshots_create(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the create snapshot method."""
     # Positional args for `snapshots_create`.
@@ -44,20 +42,22 @@ def test_snapshots_create(
 
 
 def test_snapshots_create_error(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the create snapshot method."""
     # Forcing an error from sqlalchemy commit.
-    mock_snapshots_db_connection._session.commit = Mock(
-        side_effect=DBAPIError("statement", None, "db error")
+    mock_snapshots_db_connection._session.commit = mock.Mock(
+        side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
     )
 
-    with pytest.raises(DBError, match=r"^Unable to create snapshot record\.$"):
+    with pytest.raises(
+        db_connector.DBError, match=r"^Unable to create snapshot record\.$"
+    ):
         mock_snapshots_db_connection.snapshots_create("sha1", 1, False, 1)
 
 
 def test_snapshots_read(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
     mock_snapshot_object: models.Snapshots,
 ):
     """Test the read snapshot method."""
@@ -68,7 +68,7 @@ def test_snapshots_read(
 
 
 def test_snapshots_read_error(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the read snapshot method."""
     # Return None from sqlalchemy get query.
@@ -76,7 +76,9 @@ def test_snapshots_read_error(
         None
     )
 
-    with pytest.raises(NoResultFound, match=r"^No snapshot record found\.$"):
+    with pytest.raises(
+        sqlalchemy.exc.NoResultFound, match=r"^No snapshot record found\.$"
+    ):
         mock_snapshots_db_connection.snapshots_read("sha1")
 
 
@@ -94,7 +96,7 @@ def test_snapshots_filter(
     test_input: Dict[str, Any],
     expected: str,
     request,
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the filter snapshot method.
 
@@ -114,7 +116,7 @@ def test_snapshots_filter(
 
 
 def test_snapshots_update(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the update snapshot method."""
     # Assert that the updates have been commited through sqlalchemy.
@@ -123,30 +125,30 @@ def test_snapshots_update(
 
 
 def test_snapshots_update_error(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the update snapshot method."""
     # Assert DBError is raised when there's no data provided to update the
     # snapshot.
     with pytest.raises(
-        DBError, match=r"^No data to update the snapshot record\.$"
+        db_connector.DBError, match=r"^No data to update the snapshot record\.$"
     ):
         mock_snapshots_db_connection.snapshots_update("sha1")
 
     # Assert NoResultFound is raised when no snapshot record is found with
     # the given snapshot_sha.
-    mock_snapshots_db_connection._session.query.return_value.get = Mock(
+    mock_snapshots_db_connection._session.query.return_value.get = mock.Mock(
         return_value=None
     )
     with pytest.raises(
-        NoResultFound,
+        sqlalchemy.exc.NoResultFound,
         match=r"^No snapshot record found\.$",
     ):
         mock_snapshots_db_connection.snapshots_update("sha1", 1)
 
 
 def test_snapshots_delete(
-    mock_snapshots_db_connection: LookupServiceDBConnection,
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the delete snapshots method."""
     # Assert that the delete operation calls have been made through sqlalchemy.
@@ -156,7 +158,9 @@ def test_snapshots_delete(
 
 
 def test_build_target_profiles_create(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test the create build target profiles method."""
     # Positional args for `build_target_profiles_create`.
@@ -168,28 +172,28 @@ def test_build_target_profiles_create(
     )
 
     mock_build_target_profiles_db_connection._session.add.assert_called_once()
-    # pylint: disable=line-too-long
-    mock_build_target_profiles_db_connection._session.commit.assert_called_once()
+    mock_build_target_profiles_db_connection._session.commit.assert_called_once()  # pylint: disable=line-too-long
     assert isinstance(created_build_target_profile, models.BuildTargetProfiles)
     assert (
         created_build_target_profile.build_target,
         created_build_target_profile.profile,
     ) == build_target_profile_args
-    # pylint: enable=line-too-long
 
 
 def test_build_target_profiles_create_error(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test error handling of the create build target profiles method."""
 
     # Forcing an error from sqlalchemy commit.
-    mock_build_target_profiles_db_connection._session.commit = Mock(
-        side_effect=DBAPIError("statement", None, "db error")
+    mock_build_target_profiles_db_connection._session.commit = mock.Mock(
+        side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
     )
 
     with pytest.raises(
-        DBError,
+        db_connector.DBError,
         match=r"^Unable to create build target profile record\.$",
     ):
         mock_build_target_profiles_db_connection.build_target_profiles_create(
@@ -198,7 +202,9 @@ def test_build_target_profiles_create_error(
 
 
 def test_build_target_profiles_read(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
     mock_build_target_profile_object: models.BuildTargetProfiles,
 ):
     """Test the read build target profiles method."""
@@ -210,19 +216,19 @@ def test_build_target_profiles_read(
 
 
 def test_build_target_profiles_read_error(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test error handling of the read build target profiles method."""
 
     # Return None from sqlalchemy get query.
-    # pylint: disable=line-too-long
-    mock_build_target_profiles_db_connection._session.query.return_value.get.return_value = (
+    mock_build_target_profiles_db_connection._session.query.return_value.get.return_value = (  # pylint: disable=line-too-long
         None
     )
-    # pylint: enable=line-too-long
 
     with pytest.raises(
-        NoResultFound,
+        sqlalchemy.exc.NoResultFound,
         match=r"^No build target profile record found\.$",
     ):
         mock_build_target_profiles_db_connection.build_target_profiles_read(
@@ -231,11 +237,13 @@ def test_build_target_profiles_read_error(
 
     # Raise DBAPIError from sqlalchemy get query.
     mock_build_target_profiles_db_connection._session.query.return_value.get = (
-        Mock(side_effect=DBAPIError("statement", None, "db error"))
+        mock.Mock(
+            side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
+        )
     )
 
     with pytest.raises(
-        DBError,
+        db_connector.DBError,
         match=(
             r"^Error when executing the read operation for build target"
             r" profiles\.$"
@@ -263,7 +271,9 @@ def test_build_target_profiles_filter(
     test_input: Dict[str, Any],
     expected: str,
     request,
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test the filter build target profiles method.
 
@@ -286,7 +296,9 @@ def test_build_target_profiles_filter(
 
 
 def test_build_target_profiles_update(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test the update build target profiles method."""
     # Assert that the updates have been commited through sqlalchemy.
@@ -299,13 +311,15 @@ def test_build_target_profiles_update(
 
 
 def test_build_target_profiles_update_error(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test error handling of the update build target profiles method."""
     # Assert DBError is raised when there's no data provided to update the
     # build target profile.
     with pytest.raises(
-        DBError,
+        db_connector.DBError,
         match=r"^No data to update the build target profile record\.$",
     ):
         mock_build_target_profiles_db_connection.build_target_profiles_update(1)
@@ -313,10 +327,10 @@ def test_build_target_profiles_update_error(
     # Assert NoResultFound is raised when no build target profile record
     # is found with the given build_target_profile_id.
     mock_build_target_profiles_db_connection._session.query.return_value.get = (
-        Mock(return_value=None)
+        mock.Mock(return_value=None)
     )
     with pytest.raises(
-        NoResultFound,
+        sqlalchemy.exc.NoResultFound,
         match=r"^No build target profile record found\.$",
     ):
         mock_build_target_profiles_db_connection.build_target_profiles_update(
@@ -325,7 +339,9 @@ def test_build_target_profiles_update_error(
 
 
 def test_build_target_profiles_delete(
-    mock_build_target_profiles_db_connection: LookupServiceDBConnection,
+    mock_build_target_profiles_db_connection: (
+        db_connector.LookupServiceDBConnection
+    ),
 ):
     """Test the delete build target profiles method."""
     # Assert that the delete operation calls have been made through sqlalchemy.
@@ -339,7 +355,7 @@ def test_build_target_profiles_delete(
 
 
 def test_binhosts_create(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the create binhosts method."""
     # Positional args for `binhosts_create`.
@@ -361,15 +377,17 @@ def test_binhosts_create(
 
 
 def test_binhosts_create_error(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the create binhosts method."""
     # Forcing an error from sqlalchemy commit.
-    mock_binhosts_db_connection._session.commit = Mock(
-        side_effect=DBAPIError("statement", None, "db error")
+    mock_binhosts_db_connection._session.commit = mock.Mock(
+        side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
     )
 
-    with pytest.raises(DBError, match=r"^Unable to create binhost record\.$"):
+    with pytest.raises(
+        db_connector.DBError, match=r"^Unable to create binhost record\.$"
+    ):
         mock_binhosts_db_connection.binhosts_create(
             build_target_profile_id=2,
             snapshot_sha="sha1",
@@ -382,7 +400,7 @@ def test_binhosts_create_error(
 
 
 def test_binhosts_read(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
     mock_binhost_object: models.Binhosts,
 ):
     """Test the read binhosts method."""
@@ -390,7 +408,7 @@ def test_binhosts_read(
 
 
 def test_binhosts_read_error(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the read binhost method."""
     # Return None from sqlalchemy get query.
@@ -398,7 +416,9 @@ def test_binhosts_read_error(
         None
     )
 
-    with pytest.raises(NoResultFound, match=r"^No binhost record found\.$"):
+    with pytest.raises(
+        sqlalchemy.exc.NoResultFound, match=r"^No binhost record found\.$"
+    ):
         mock_binhosts_db_connection.binhosts_read(1)
 
 
@@ -416,7 +436,7 @@ def test_binhosts_filter(
     test_input: Dict[str, Any],
     expected: str,
     request,
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the filter binhosts method.
 
@@ -436,7 +456,7 @@ def test_binhosts_filter(
 
 
 def test_binhosts_update(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the update binhosts method."""
     # Assert that the updates have been commited through sqlalchemy.
@@ -445,30 +465,30 @@ def test_binhosts_update(
 
 
 def test_binhosts_update_error(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the update binhosts method."""
     # Assert DBError is raised when there's no data provided to update the
     # binhost.
     with pytest.raises(
-        DBError, match=r"^No data to update the binhost record\.$"
+        db_connector.DBError, match=r"^No data to update the binhost record\.$"
     ):
         mock_binhosts_db_connection.binhosts_update(1)
 
     # Assert NoResultFound is raised when no binhost record is found with the
     # given binhost_id.
-    mock_binhosts_db_connection._session.query.return_value.get = Mock(
+    mock_binhosts_db_connection._session.query.return_value.get = mock.Mock(
         return_value=None
     )
     with pytest.raises(
-        NoResultFound,
+        sqlalchemy.exc.NoResultFound,
         match=r"^No binhost record found\.$",
     ):
         mock_binhosts_db_connection.binhosts_update(1, 2)
 
 
 def test_binhosts_delete(
-    mock_binhosts_db_connection: LookupServiceDBConnection,
+    mock_binhosts_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the delete binhosts method."""
     # Assert that the delete operation calls have been made through sqlalchemy.
@@ -479,7 +499,7 @@ def test_binhosts_delete(
 
 def test_query_binhosts(
     mock_query_binhosts_object: models.Binhosts,
-    mock_db_connection: LookupServiceDBConnection,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the custom method to query binhosts."""
     # Mock the response from the SQL query.
@@ -492,39 +512,40 @@ def test_query_binhosts(
 
 
 def test_query_binhosts_error(
-    mock_db_connection: LookupServiceDBConnection,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the query binhosts method."""
     # Force an error from the SQL query.
-    mock_db_connection._session.query.return_value.from_statement.return_value.all = Mock(  # pylint: disable=line-too-long
-        side_effect=DBAPIError("statement", None, "db error")
+    mock_db_connection._session.query.return_value.from_statement.return_value.all = mock.Mock(  # pylint: disable=line-too-long
+        side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
     )
 
     with pytest.raises(
-        DBError, match=r"^Error when executing the sql query\.$"
+        db_connector.DBError, match=r"^Error when executing the sql query\.$"
     ):
         mock_db_connection.query_binhosts("test_bucket", ["test_sha"], 1, False)
 
 
 def test_update_binhosts_last_accessed(
-    mock_db_connection: LookupServiceDBConnection,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test the `update_binhosts_last_accessed` method."""
-    mock_db_connection._session.execute = Mock()
+    mock_db_connection._session.execute = mock.Mock()
     mock_db_connection.update_binhosts_last_accessed([1, 2])
 
     mock_db_connection._session.execute.assert_called_once()
 
 
 def test_update_binhosts_last_accessed_error(
-    mock_db_connection: LookupServiceDBConnection,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
 ):
     """Test error handling of the `update_binhosts_last_accessed` method."""
-    mock_db_connection._session.execute = Mock(
-        side_effect=DBAPIError("statement", None, "db error")
+    mock_db_connection._session.execute = mock.Mock(
+        side_effect=sqlalchemy.exc.DBAPIError("statement", None, "db error")
     )
 
     with pytest.raises(
-        DBError, match=r"^Error when executing the sql statement\.$"
+        db_connector.DBError,
+        match=r"^Error when executing the sql statement\.$",
     ):
         mock_db_connection.update_binhosts_last_accessed([1, 2])
