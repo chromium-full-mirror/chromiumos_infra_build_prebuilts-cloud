@@ -587,6 +587,44 @@ class LookupServiceDBConnection:
             error_msg="Error when deleting the binhost record."
         )
 
+    def get_corresponding_snapshot_shas(
+        self, snapshot_shas: List[str], private: bool
+    ) -> List[Optional[models.Snapshots]]:
+        """Query for the corresponding public or private snapshot SHAs.
+
+        If the provided SHAs are public, return the corresponding private SHAs.
+        If the provided SHAs are private, return the corresponding public SHAs.
+
+        Args:
+            snapshot_shas: A list of snapshot SHAs.
+            private: True if the provided list of SHAs are private.
+
+        Returns:
+            A list of snapshot SHAs, if found.
+
+        Raises:
+            DBError: When the sql query fails.
+        """
+        # Construct string of snapshot SHAs, to be used in the SQL query.
+        snapshot_shas_formatted = ",".join(f"'{x}'" for x in snapshot_shas)
+
+        statement = sqlalchemy.text(
+            "SELECT snapshot_sha "
+            "FROM snapshots "
+            "WHERE snapshot_num IN "
+            "(SELECT snapshot_num FROM snapshots "
+            f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) AND "
+            f"external={private}"
+        )
+        # Specify the columns for SQLAlchemy ORM mapping.
+        statement = statement.columns(
+            models.Snapshots.snapshot_sha,
+        )
+
+        query = self._session.query(models.Snapshots).from_statement(statement)
+
+        return self._execute_query(query)
+
     def query_binhosts(
         self,
         gs_bucket_name: str,
