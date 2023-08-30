@@ -285,17 +285,25 @@ def mock_lookup_binhosts_request_b64() -> bytes:
     Returns:
         A LookupBinhostsRequest object encoded with base64, in bytes.
     """
-    req = prebuilts_cloud_pb2.LookupBinhostsRequest(
-        gs_bucket_name="test_bucket",
-        snapshot_shas=["test_sha"],
-        build_target="test_target",
-        profile="base",
-        private=False,
-    )
-    msg_serialized = req.SerializeToString()
-    msg_b64 = base64.urlsafe_b64encode(msg_serialized)
 
-    return msg_b64
+    def _construct_request(
+        private: bool, get_corresponding_binhosts: bool
+    ) -> str:
+        """Construct a binhosts lookup request."""
+        req = prebuilts_cloud_pb2.LookupBinhostsRequest(
+            gs_bucket_name="test_bucket",
+            snapshot_shas=["test_sha"],
+            build_target="test_target",
+            profile="base",
+            private=private,
+            get_corresponding_binhosts=get_corresponding_binhosts,
+            generic_build_target="test_generic_target",
+            generic_profile="base",
+        )
+        msg_serialized = req.SerializeToString()
+        return base64.urlsafe_b64encode(msg_serialized)
+
+    return _construct_request
 
 
 @pytest.fixture
@@ -334,6 +342,7 @@ def mock_lookup_binhosts_response_b64(
 def mock_db_connection_lookup_binhosts(
     mock_query_binhosts_object: models.Binhosts,
     mock_build_target_profile_objects_list: List[models.BuildTargetProfiles],
+    mock_snapshot_objects_list: List[models.Snapshots],
 ) -> mock.Mock:
     """Mock the different database calls from the `lookup_binhosts` function.
 
@@ -344,9 +353,13 @@ def mock_db_connection_lookup_binhosts(
     mock_db_connection.build_target_profiles_filter.return_value = (
         mock_build_target_profile_objects_list
     )
-    mock_db_connection.query_binhosts.return_value = [
-        mock_query_binhosts_object
-    ]
+    mock_db_connection.get_corresponding_snapshot_shas.return_value = (
+        mock_snapshot_objects_list
+    )
+    mock_db_connection.query_binhosts.side_effect = (
+        [mock_query_binhosts_object],
+        [],
+    )
     mock_db_connection.update_binhosts_last_accessed = mock.Mock()
 
     return mock_db_connection

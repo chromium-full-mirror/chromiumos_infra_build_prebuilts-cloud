@@ -631,7 +631,7 @@ class LookupServiceDBConnection:
         snapshot_shas: List[str],
         build_target_profile_id: int,
         private: bool,
-    ) -> List[models.Binhosts]:
+    ) -> List[Optional[models.Binhosts]]:
         """Query and return binhosts based on the filter parameters.
 
         Execute a custom query to filter binhosts.

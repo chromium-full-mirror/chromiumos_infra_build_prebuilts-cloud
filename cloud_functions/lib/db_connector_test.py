@@ -8,7 +8,7 @@
 # pylint: disable=protected-access
 
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest import mock
 
 # pylint: disable=import-error
@@ -495,6 +495,22 @@ def test_binhosts_delete(
     mock_binhosts_db_connection.binhosts_delete(1)
     mock_binhosts_db_connection._session.delete.assert_called_once()
     mock_binhosts_db_connection._session.commit.assert_called_once()
+
+
+def test_get_corresponding_snapshot_shas(
+    mock_snapshot_object: models.Snapshots,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
+    mock_snapshot_objects_list: List[models.Snapshots],
+):
+    """Test the custom method to get corresponding snapshot SHAs."""
+    # Mock the response from the SQL query.
+    mock_db_connection._session.query.return_value.from_statement.return_value.all.return_value = [  # pylint: disable=line-too-long
+        mock_snapshot_object
+    ]
+    assert (
+        mock_db_connection.get_corresponding_snapshot_shas(["test_sha"], False)
+        == mock_snapshot_objects_list
+    )
 
 
 def test_query_binhosts(

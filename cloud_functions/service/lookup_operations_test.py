@@ -20,7 +20,9 @@ from service import lookup_operations
 def test__parse_lookup_binhosts_request(mock_lookup_binhosts_request_b64: str):
     """Test the helper function which parses lookup binhosts requests."""
     mock_request = mock.Mock()
-    mock_request.args.get.return_value = mock_lookup_binhosts_request_b64
+    mock_request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=True, get_corresponding_binhosts=True
+    )
 
     res = lookup_operations._parse_lookup_binhosts_request(mock_request)
     assert isinstance(res, prebuilts_cloud_pb2.LookupBinhostsRequest)
@@ -29,7 +31,8 @@ def test__parse_lookup_binhosts_request(mock_lookup_binhosts_request_b64: str):
     assert res.snapshot_shas == ["test_sha"]
     assert res.build_target == "test_target"
     assert res.profile == "base"
-    assert res.private is False
+    assert res.private is True
+    assert res.get_corresponding_binhosts is True
 
 
 def test__parse_lookup_binhosts_request_missing_error():
@@ -68,14 +71,52 @@ def test__construct_binhosts_response(
     assert lookup_binhosts_response == mock_lookup_binhosts_response_b64
 
 
-def test_lookup_binhosts(
+def test_lookup_binhosts_googlers(
     mock_lookup_binhosts_request_b64: str,
     mock_lookup_binhosts_response_b64: str,
     mock_db_connection_lookup_binhosts: mock.Mock,
 ):
-    """Test the lookup_binhosts function."""
+    """Test the lookup_binhosts function for the Googlers case."""
     request = mock.Mock()
-    request.args.get.return_value = mock_lookup_binhosts_request_b64
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=True, get_corresponding_binhosts=True
+    )
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 200
+    assert response.data == mock_lookup_binhosts_response_b64
+
+
+def test_lookup_binhosts_partners(
+    mock_lookup_binhosts_request_b64: str,
+    mock_lookup_binhosts_response_b64: str,
+    mock_db_connection_lookup_binhosts: mock.Mock,
+):
+    """Test the lookup_binhosts function for the partners case."""
+    request = mock.Mock()
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=True
+    )
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 200
+    assert response.data == mock_lookup_binhosts_response_b64
+
+
+def test_lookup_binhosts_external(
+    mock_lookup_binhosts_request_b64: str,
+    mock_lookup_binhosts_response_b64: str,
+    mock_db_connection_lookup_binhosts: mock.Mock,
+):
+    """Test the lookup_binhosts function for the external developers case."""
+    request = mock.Mock()
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=False
+    )
 
     response = lookup_operations.lookup_binhosts(
         request, mock_db_connection_lookup_binhosts
@@ -101,37 +142,18 @@ def test_lookup_binhosts_bad_request(
     )
 
 
-def test_lookup_binhosts_build_target_profile_not_found(
-    mock_lookup_binhosts_request_b64: str,
-    mock_db_connection_lookup_binhosts: mock.Mock,
-):
-    """Test lookup_binhosts response when no build_target_profile is found."""
-    request = mock.Mock()
-    request.args.get.return_value = mock_lookup_binhosts_request_b64
-
-    # Overwrite the fixture return value so that no build_target_profile is
-    # found.
-    mock_db_connection_lookup_binhosts.build_target_profiles_filter.return_value = (  # pylint: disable=line-too-long
-        []
-    )
-
-    response = lookup_operations.lookup_binhosts(
-        request, mock_db_connection_lookup_binhosts
-    )
-    assert response.status_code == 404
-    assert response.data == b"Build target profile not found"
-
-
 def test_lookup_binhosts_binhosts_not_found(
     mock_db_connection_lookup_binhosts: mock.Mock,
     mock_lookup_binhosts_request_b64: str,
 ):
     """Test lookup_binhosts response when no binhosts are found."""
     request = mock.Mock()
-    request.args.get.return_value = mock_lookup_binhosts_request_b64
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=True, get_corresponding_binhosts=True
+    )
 
     # Overwrite the fixture return value so that no binhosts are found.
-    mock_db_connection_lookup_binhosts.query_binhosts.return_value = []
+    mock_db_connection_lookup_binhosts.query_binhosts.side_effect = ([], [])
 
     response = lookup_operations.lookup_binhosts(
         request, mock_db_connection_lookup_binhosts

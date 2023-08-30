@@ -8,7 +8,7 @@ import base64
 import binascii
 import decimal
 import logging
-from typing import List
+from typing import List, Optional
 
 # pylint: disable=import-error
 import flask
@@ -96,6 +96,30 @@ def _construct_binhosts_response(binhosts: List[models.Binhosts]) -> bytes:
     return base64.urlsafe_b64encode(response.SerializeToString())
 
 
+def _lookup_build_target_profile_id(
+    db_connection: db_connector.LookupServiceDBConnection,
+    build_target: str,
+    profile: str,
+) -> Optional[int]:
+    """Lookup build target profile id.
+
+    Args:
+        db_connection: Connection object to the `lookup_service` database.
+        build_target: The name of the build target.
+        profile: The name of the profile for the build target.
+
+    Returns:
+        The id of the build target profile, if found.
+    """
+    build_target_profiles = db_connection.build_target_profiles_filter(
+        f"build_target='{build_target}' AND profile='{profile}'",
+        limit=1,
+    )
+    if not build_target_profiles:
+        return None
+    return build_target_profiles[0].build_target_profile_id
+
+
 def lookup_binhosts(
     request: flask.wrappers.Request,
     lookup_service_db_connection: db_connector.LookupServiceDBConnection,
@@ -120,25 +144,79 @@ def lookup_binhosts(
             "Unable to parse filter parameters from the request.", status=400
         )
 
-    # Get the build_target_profile id based on the filter parameters.
-    build_target_profiles = (
-        lookup_service_db_connection.build_target_profiles_filter(
-            f"build_target='{lookup_service_request.build_target}' AND "
-            f"profile='{lookup_service_request.profile}'",
-            limit=1,
-        )
+    # Get the build_target_profile ids based on the filter parameters.
+    build_target_profile_id = _lookup_build_target_profile_id(
+        lookup_service_db_connection,
+        lookup_service_request.build_target,
+        lookup_service_request.profile,
     )
-    if not build_target_profiles:
-        return flask.Response("Build target profile not found", status=404)
-    build_target_profile_id = build_target_profiles[0].build_target_profile_id
+    generic_build_target_profile_id = _lookup_build_target_profile_id(
+        lookup_service_db_connection,
+        lookup_service_request.generic_build_target,
+        lookup_service_request.generic_profile,
+    )
 
-    # Fetch binhosts from the DB.
-    binhosts = lookup_service_db_connection.query_binhosts(
-        lookup_service_request.gs_bucket_name,
-        lookup_service_request.snapshot_shas,
-        build_target_profile_id,
-        lookup_service_request.private,
-    )
+    # Fetch the binhosts from the DB.
+    private = lookup_service_request.private
+    binhosts = []
+    # Googlers case.
+    if private and lookup_service_request.get_corresponding_binhosts:
+        external_shas = (
+            lookup_service_db_connection.get_corresponding_snapshot_shas(
+                lookup_service_request.snapshot_shas,
+                private=True,
+            )
+        )
+        binhosts.extend(
+            lookup_service_db_connection.query_binhosts(
+                lookup_service_request.gs_bucket_name,
+                lookup_service_request.snapshot_shas,
+                build_target_profile_id,
+                private=True,
+            )
+        )
+        binhosts.extend(
+            lookup_service_db_connection.query_binhosts(
+                lookup_service_request.gs_bucket_name,
+                external_shas,
+                generic_build_target_profile_id,
+                private=False,
+            )
+        )
+    # Partners case.
+    elif not private and lookup_service_request.get_corresponding_binhosts:
+        internal_shas = (
+            lookup_service_db_connection.get_corresponding_snapshot_shas(
+                lookup_service_request.snapshot_shas,
+                private=False,
+            )
+        )
+        binhosts.extend(
+            lookup_service_db_connection.query_binhosts(
+                lookup_service_request.gs_bucket_name,
+                internal_shas,
+                build_target_profile_id,
+                private=True,
+            )
+        )
+        binhosts.extend(
+            lookup_service_db_connection.query_binhosts(
+                lookup_service_request.gs_bucket_name,
+                lookup_service_request.snapshot_shas,
+                generic_build_target_profile_id,
+                private=False,
+            )
+        )
+    # External developers case.
+    else:
+        binhosts.extend(
+            lookup_service_db_connection.query_binhosts(
+                lookup_service_request.gs_bucket_name,
+                lookup_service_request.snapshot_shas,
+                generic_build_target_profile_id,
+                private=False,
+            )
+        )
 
     if not binhosts:
         return flask.Response(
