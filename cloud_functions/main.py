@@ -4,7 +4,6 @@
 
 """Cloud Functions entry point implementations."""
 
-
 # pylint: disable=import-error
 from cloudevents.http import event
 import flask
@@ -16,6 +15,10 @@ from lib import config
 from lib import db_connector
 from service import lookup_operations
 from service import update_operations
+
+
+# Initialize default configuration.
+config.READER.initialize_defaults()
 
 
 @functions_framework.http

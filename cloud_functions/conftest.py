@@ -240,7 +240,10 @@ def mock_config_reader() -> config.ConfigReader:
             },
         }
     )
-    return config.ConfigReader()
+
+    mock_reader = config.ConfigReader()
+    mock_reader.initialize_defaults()
+    return mock_reader
 
 
 @pytest.fixture

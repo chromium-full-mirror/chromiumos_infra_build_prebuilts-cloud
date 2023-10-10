@@ -4,7 +4,6 @@
 
 """Unit tests for secret_manager."""
 
-
 from google.cloud import secretmanager  # pylint: disable=import-error
 
 from lib import constants

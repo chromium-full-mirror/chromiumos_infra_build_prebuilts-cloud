@@ -23,22 +23,21 @@ class ConfigReader:
         """Init method."""
         self._CONFIG = {}
 
-        self.secrets = secret_manager.LookupServiceDbSecrets()
-        self._CONFIG.update(self._defaults())
-
     def _defaults(self) -> Dict[str, Any]:
         """Return default configuration parameters.
 
         Returns:
             A dictionary containing configuration parameters.
         """
+        # secret manager client.
+        secrets = secret_manager.LookupServiceDbSecrets()
         return {
             "lookup_service_db": {
-                "database": self.secrets.database_name,
+                "database": secrets.database_name,
                 "host": os.environ.get("PREBUILTS_SQL_INSTANCE_HOST"),
                 "port": os.environ.get("PREBUILTS_SQL_INSTANCE_PORT"),
-                "username": self.secrets.user,
-                "password": self.secrets.password,
+                "username": secrets.user,
+                "password": secrets.password,
             },
             "topics": {
                 "update_snapshot_data": os.environ.get(
@@ -50,11 +49,15 @@ class ConfigReader:
             },
         }
 
+    def initialize_defaults(self) -> None:
+        """Initialize default configuration parameters."""
+        self._CONFIG.update(self._defaults())
+
     def get(self, key: str) -> Dict[str, Any]:
         """Get configuration values based on the key.
 
         Args:
-            key: Name of the configuration parameters to be retreived.
+            key: Name of the configuration parameters to be retrieved.
 
         Returns:
             A dictionary containing the subset of configuration parameters based
@@ -63,9 +66,9 @@ class ConfigReader:
         Raises:
             KeyNotFoundError: When the key is not present in the Config Reader.
         """
-
         return copy.deepcopy(self._CONFIG[key])
 
 
 # This is a singleton object that can be imported and used.
+# The default values are initialized in main.py.
 READER = ConfigReader()

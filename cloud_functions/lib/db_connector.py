@@ -4,7 +4,6 @@
 
 """Functionality for performing database operations."""
 
-
 from typing import Any, List, Optional
 
 # pylint: disable=import-error
