@@ -51,7 +51,7 @@ Option 2: Use the Cloud Functions Inline Editor (Not Recommended)
 
 #### Runtime environment variables for the lookup service cloud function:
 
-- STAGING : Boolean to denote staging environment. e.g. 1 for staging.
+- env : Environment, can be one of staging, prod.
 - PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql instance.
 - PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
 
@@ -83,7 +83,7 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
     - FUNCTION_PORT : Port to run the function on.
     - FUNCTION_SIGNATURE_TYPE : Signature type of the function, which determines
         the event format. Can be one of http, event or cloudevent.
-    - STAGING : 1 to denote staging environment.
+    - env : environment, can be one of staging, prod.
     - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
     - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
     - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
@@ -181,3 +181,12 @@ The query parameter to be sent with the request:
 - "filter": A `LookupBinhostsRequest` object encoded as a URL safe base64 byte object.
 
 The response is a `LookupBinhostsResponse` object encoded as a URL safe base64 byte object, sent in the response body.
+
+## Secret Manager
+
+GCP Secret Manager is used to store sensitive information that can be accessed by the cloud functions. The secrets are created and managed manually through the cloud console. Secrets being used:
+- prebuilts-db:      Name of the prebuilts PostgreSQL instance.
+- prebuilts-db-user: Name of the database user.
+- prebuilts-db-pw  : Password for the database user.
+
+NOTE: Name of each of these secrets is prefixed by the environment name. e.g. staging-prebuilts-db

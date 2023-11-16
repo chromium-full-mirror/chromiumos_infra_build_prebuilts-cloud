@@ -23,29 +23,26 @@ class DataCorruptionError(Error):
 
 
 class LookupServiceDbSecrets:
-    """Secrets for the database in differentß environments."""
+    """Secrets for the database in different environments."""
 
     def __init__(self) -> None:
         """Init method."""
-        self.staging = bool(os.environ.get("STAGING"))
+        self.env = os.environ.get("env")
 
     @property
     def database_name(self) -> str:
         """Gets the database name."""
-        secret = "prebuilts-staging-db" if self.staging else "prebuilts-db"
-        return _get_secret(secret)
+        return _get_secret(f"{self.env}-prebuilts-db")
 
     @property
     def user(self) -> str:
         """Gets the database user."""
-        secret = "prebuilts-staging-user" if self.staging else "prebuilts-user"
-        return _get_secret(secret)
+        return _get_secret(f"{self.env}-prebuilts-db-user")
 
     @property
     def password(self) -> str:
         """Gets the database password."""
-        secret = "prebuilts-staging-pw" if self.staging else "prebuilts-pw"
-        return _get_secret(secret)
+        return _get_secret(f"{self.env}-prebuilts-db-pw")
 
 
 def _get_secret(secret: str, version: str = "latest") -> str:
