@@ -27,7 +27,7 @@ class LookupServiceDbSecrets:
 
     def __init__(self) -> None:
         """Init method."""
-        self.env = os.environ.get("env")
+        self.env = os.environ.get("ENV")
 
     @property
     def database_name(self) -> str:

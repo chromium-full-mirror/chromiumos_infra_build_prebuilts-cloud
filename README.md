@@ -51,7 +51,7 @@ Option 2: Use the Cloud Functions Inline Editor (Not Recommended)
 
 #### Runtime environment variables for the lookup service cloud function:
 
-- env : Environment, can be one of staging, prod.
+- ENV : Environment, can be one of staging, prod.
 - PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql instance.
 - PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
 
@@ -83,7 +83,7 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
     - FUNCTION_PORT : Port to run the function on.
     - FUNCTION_SIGNATURE_TYPE : Signature type of the function, which determines
         the event format. Can be one of http, event or cloudevent.
-    - env : environment, can be one of staging, prod.
+    - ENV : environment, can be one of staging, prod.
     - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
     - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
     - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.

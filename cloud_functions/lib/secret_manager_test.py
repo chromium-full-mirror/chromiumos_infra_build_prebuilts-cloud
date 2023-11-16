@@ -24,7 +24,7 @@ class MockSecretManagerServiceClient:
 
 def testEnvironmentStaging(monkeypatch):
     """Test the environment is set to staging."""
-    monkeypatch.setenv("env", "staging")
+    monkeypatch.setenv("ENV", "staging")
 
     secrets = secret_manager.LookupServiceDbSecrets()
 
