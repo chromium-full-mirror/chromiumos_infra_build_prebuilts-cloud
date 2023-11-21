@@ -7,47 +7,23 @@ This repo houses all the GCP code for the `chromeos-prebuilts` project.
 We're using Cloud Functions as a serverless platform for the lookup service.
 
 The entry points for the Cloud Functions are defined in `cloud_functions/main.py`.
-Each entry point has a `functions_framework` decorator which helps receive the function
-arguments based on the signature type specified.
+Each entry point has a `functions_framework` decorator which helps receive the function arguments based on the signature type specified.
+
+Cloud Functions creation is managed via Terraform. TODO add more info here.
 
 ### Deployment
 
-**During initial development, we are manually deploying changes to the `staging` instances of both Cloud SQL and Cloud Functions.
+**All changes, once uploaded to Gerrit, are deployed to staging automatically.
 DO NOT deploy to production instances as the production deployment process will be automated later.**
 
-Creating Cloud Functions via the Google Cloud console:
+We use Proctor/Cloud Build Integrations ([go/gcb-ggob](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head)) to automatically deploy changes. A Cloud Build build is triggered whenever a new Gerrit patchset is uploaded in the `prebuilts-cloud` project. See [here](https://pantheon.corp.google.com/cloud-build/triggers?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) for details on the Cloud Build trigger setup through Proctor.
 
-1. Go to `Cloud Functions` and click on `Create function`.
-2. Select `Environment=2nd gen`, enter a function name.
-3. For event driven functions which need to be triggered from Pub/Sub messages:
-    - Note: The cloud function must be created after the topic has been created.
-        Since each cloud function can only have one trigger, in cases where we
-        have the same function entry point to consume messages from different
-        Pub/Sub topics, create multiple cloud functions, one for each topic.
-    - Click on `Add EventArc Trigger` and select `Trigger type=Google sources`, `Event provider=Cloud Pub/Sub` and `Event=google.cloud.pubsub.topic.v1.messagePublished`.
-    - Select the Pub/Sub topic and select the `prebuilts-cloud` service account.
-    - Check the `Retry on failure` box. This ensures that the message is processed again when there's an error.
-4. Enter configuration settings such as runtime env variables and connection settings to enable routing through the VPC connector.
+During a build, a few things happen:
+* A Google Cloud Storage object is created containing the source code. The exact location can be determined by inspecting the build logs. [Example](https://screenshot.googleplex.com/GJ36QD8vhu53xv6).
+* A new version of the specified Cloud Function is deployed with 100% traffic.
+* The GCB User will add the Verified+1 label and a comment to your Gerrit change upon a successful build. [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
-
-There are two ways to manually deploy additional changes:
-
-Option 1: Create and upload a zip of the source code (Recommended)
-
-1. Work on changes locally like normal development.
-2. Once ready, in `cloud_functions/`, run `zip -r <date>-<version>.zip .` (Example: `zip -r 02072023-1.zip .`)
-3. Upload the .zip file to Cloud Storage in the `cloudfunctions-manual-deployments` [bucket](https://pantheon.corp.google.com/storage/browser/cloudfunctions-manual-deployments?project=chromeos-prebuilts).
-4. In Cloud Functions, [select](https://pantheon.corp.google.com/functions/details/us-central1/staging-lookup-service?env=gen1&project=chromeos-prebuilts) the `staging-lookup-service` to Edit.
-5. In Step 1, Configuration, edit settings if needed.
-6. In Step 2, Code, select `ZIP from Cloud Storage` for the `Source code` and select the .zip file uploaded in Step 3 above.
-7. Select `Deploy` and wait a few minutes. If the deployment fails, take a look at the logs and make adjustments as needed.
-
-Option 2: Use the Cloud Functions Inline Editor (Not Recommended)
-
-1. In Cloud Functions, [select](https://pantheon.corp.google.com/functions/details/us-central1/staging-lookup-service?env=gen1&project=chromeos-prebuilts) the `staging-lookup-service` to Edit.
-2. In Step 1, Configuration, edit settings if needed.
-3. In Step 2, Code, make changes directly using the Inline Editor provided.
-4. Select `Deploy` and wait a few minutes. If the deployment fails, take a look at the logs and make adjustments as needed.
+A Cloud Build trigger can be run manually by following the steps [here](go/gcb-ggob#running-triggers).
 
 #### Runtime environment variables for the lookup service cloud function:
 
