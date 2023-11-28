@@ -34,7 +34,9 @@ class Snapshots(Base):
     snapshot_num = sqlalchemy.Column(sqlalchemy.INTEGER, nullable=False)
     external = sqlalchemy.Column(sqlalchemy.BOOLEAN, nullable=False)
     buildbucket_id = sqlalchemy.Column(sqlalchemy.BIGINT, nullable=False)
-    created_at = sqlalchemy.Column(sqlalchemy.TIMESTAMP)
+    created_at = sqlalchemy.Column(
+        sqlalchemy.TIMESTAMP, server_default=sql.func.now()
+    )
 
 
 class BuildTargetProfiles(Base):
@@ -69,4 +71,6 @@ class Binhosts(Base):
     )
     private = sqlalchemy.Column(sqlalchemy.BOOLEAN, nullable=False)
     last_accessed = sqlalchemy.Column(sqlalchemy.TIMESTAMP)
-    created_at = sqlalchemy.Column(sqlalchemy.TIMESTAMP)
+    created_at = sqlalchemy.Column(
+        sqlalchemy.TIMESTAMP, server_default=sql.func.now()
+    )
