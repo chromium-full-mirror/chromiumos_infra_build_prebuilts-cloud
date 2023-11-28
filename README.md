@@ -14,16 +14,16 @@ Cloud Functions creation is managed via Terraform. TODO add more info here.
 ### Deployment
 
 **All changes, once uploaded to Gerrit, are deployed to staging automatically.
-DO NOT deploy to production instances as the production deployment process will be automated later.**
+All changes, once merged, are deployed to production automatically.**
 
-We use Proctor/Cloud Build Integrations ([go/gcb-ggob](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head)) to automatically deploy changes. A Cloud Build build is triggered whenever a new Gerrit patchset is uploaded in the `prebuilts-cloud` project. See [here](https://pantheon.corp.google.com/cloud-build/triggers?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) for details on the Cloud Build trigger setup through Proctor.
+We use Proctor/Cloud Build Integrations ([go/gcb-ggob](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head)) to automatically deploy changes. A Cloud Build build is triggered whenever a new Gerrit patchset is uploaded in the `prebuilts-cloud` project for the staging environment. See [here](https://pantheon.corp.google.com/cloud-build/triggers?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) for details on the Cloud Build trigger setup through Proctor.
 
 During a build, a few things happen:
 * A Google Cloud Storage object is created containing the source code. The exact location can be determined by inspecting the build logs. [Example](https://screenshot.googleplex.com/GJ36QD8vhu53xv6).
 * A new version of the specified Cloud Function is deployed with 100% traffic.
 * The GCB User will add the Verified+1 label and a comment to your Gerrit change upon a successful build. [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
-A Cloud Build trigger can be run manually by following the steps [here](go/gcb-ggob#running-triggers).
+A Cloud Build trigger can be run manually by following the steps [here](go/gcb-ggob#running-triggers). Once a CL successfully merged, a separate trigger deploys the latest source code to production.
 
 #### Runtime environment variables for the lookup service cloud function:
 
