@@ -23,7 +23,7 @@ During a build, a few things happen:
 * A new version of the specified Cloud Function is deployed with 100% traffic.
 * The GCB User will add the Verified+1 label and a comment to your Gerrit change upon a successful build. [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
-A Cloud Build trigger can be run manually by following the steps [here](go/gcb-ggob#running-triggers). Once a CL successfully merged, a separate trigger deploys the latest source code to production.
+A Cloud Build trigger can be run manually by following the steps [here](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head#running-triggers). Once a CL successfully merged, a separate trigger deploys the latest source code to production.
 
 #### Runtime environment variables for the lookup service cloud function:
 

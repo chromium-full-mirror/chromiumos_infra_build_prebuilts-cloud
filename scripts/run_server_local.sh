@@ -31,7 +31,7 @@ else
 fi
 # shellcheck source=../venv/bin/activate
 source "${VENV_DIR}/bin/activate"
-pip install -r "${DIR}/../cloud_functions/requirements.txt"
+pip install --require-hashes -r "${DIR}/../cloud_functions/requirements.txt"
 
 # Start the cloud function server.
 functions-framework \
