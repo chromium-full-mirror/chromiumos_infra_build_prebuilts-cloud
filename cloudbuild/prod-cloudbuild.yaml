@@ -1,0 +1,51 @@
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args:
+  - gcloud
+  - functions
+  - deploy
+  - prod-lookup-service-binhosts
+  - --entry-point=lookup_service_binhosts
+  - --env-vars-file=cloudbuild/.env.prod.yaml
+  - --gen2
+  - --region=us-central1
+  - --runtime=python38
+  - --service-account=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
+  - --source=cloud_functions/.
+  - --trigger-http
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args:
+  - gcloud
+  - functions
+  - deploy
+  - prod-update-service-binhost-data
+  - --egress-settings=private-ranges-only
+  - --entry-point=update_service
+  - --env-vars-file=cloudbuild/.env.prod.yaml
+  - --gen2
+  - --ingress-settings=internal-only
+  - --region=us-central1
+  - --retry
+  - --runtime=python38
+  - --service-account=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
+  - --source=cloud_functions/.
+  - --trigger-topic=prod-update_binhost_data
+  - --vpc-connector=prod-prebuilts-conn
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args:
+  - gcloud
+  - functions
+  - deploy
+  - prod-update-service-snapshot-data
+  - --egress-settings=private-ranges-only
+  - --entry-point=update_service
+  - --env-vars-file=cloudbuild/.env.prod.yaml
+  - --gen2
+  - --ingress-settings=internal-only
+  - --region=us-central1
+  - --retry
+  - --runtime=python38
+  - --service-account=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
+  - --source=cloud_functions/.
+  - --trigger-topic=prod-update_snapshot_data
+  - --vpc-connector=prod-prebuilts-conn
