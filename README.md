@@ -60,11 +60,12 @@ Steps to run cloud functions locally (All of these steps are done outside the ch
     - FUNCTION_SIGNATURE_TYPE : Signature type of the function, which determines
         the event format. Can be one of http, event or cloudevent.
     - ENV : environment, can be one of staging, prod.
-    - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
-    - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
     - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
         Topic name refers to the complete name that uniquely identifies a Pub/Sub topic.
     - TOPIC_NAME_UPDATE_BINHOST_DATA : Topic name of the update binhost data Pub/Sub topic.
+- Additional env variables in `scripts/.env.defaults`, useful for local testing and development (use the cloud-sql-proxy database host and port).
+    - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
+    - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
 - Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
     - In `.env.local`, update `FUNCTION_TARGET` and `FUNCTION_SIGNATURE_TYPE` based on whether you want to run the lookup or the update service.
     - For running the lookup function, `FUNCTION_TARGET=lookup_service` and `FUNCTION_SIGNATURE_TYPE=http`
@@ -164,5 +165,7 @@ GCP Secret Manager is used to store sensitive information that can be accessed b
 - prebuilts-db:      Name of the prebuilts PostgreSQL instance.
 - prebuilts-db-user: Name of the database user.
 - prebuilts-db-pw  : Password for the database user.
+- prebuilts-db-host: Private IP address of the database instance.
+- prebuilts-db-port: Port of the database instance.
 
 NOTE: Name of each of these secrets is prefixed by the environment name. e.g. staging-prebuilts-db

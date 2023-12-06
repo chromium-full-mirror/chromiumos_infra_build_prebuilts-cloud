@@ -86,3 +86,41 @@ def testGetPassword(monkeypatch):
     secrets = secret_manager.LookupServiceDbSecrets()
 
     assert secrets.password == test_db_pw
+
+
+def testGetDatabaseHost(monkeypatch):
+    """Test the correct database host is returned."""
+    test_db_host = "100.100.1.1"
+
+    def mock_access_secret_version(*_args, **_kwargs):
+        return MockSecretManagerServiceClient(secret=test_db_host)
+
+    monkeypatch.setattr(
+        secret_manager.LookupServiceDbSecrets, "database_host", test_db_host
+    )
+    monkeypatch.setattr(
+        secretmanager, "SecretManagerServiceClient", mock_access_secret_version
+    )
+
+    secrets = secret_manager.LookupServiceDbSecrets()
+
+    assert secrets.database_host == test_db_host
+
+
+def testGetDatabasePort(monkeypatch):
+    """Test the correct database host is returned."""
+    test_db_port = 123
+
+    def mock_access_secret_version(*_args, **_kwargs):
+        return MockSecretManagerServiceClient(secret=test_db_port)
+
+    monkeypatch.setattr(
+        secret_manager.LookupServiceDbSecrets, "database_port", test_db_port
+    )
+    monkeypatch.setattr(
+        secretmanager, "SecretManagerServiceClient", mock_access_secret_version
+    )
+
+    secrets = secret_manager.LookupServiceDbSecrets()
+
+    assert secrets.database_port == test_db_port

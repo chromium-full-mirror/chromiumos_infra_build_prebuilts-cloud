@@ -44,6 +44,16 @@ class LookupServiceDbSecrets:
         """Gets the database password."""
         return _get_secret(f"{self.env}-prebuilts-db-pw")
 
+    @property
+    def database_host(self) -> str:
+        """Gets the database host IP address."""
+        return _get_secret(f"{self.env}-prebuilts-db-host")
+
+    @property
+    def database_port(self) -> str:
+        """Gets the database port."""
+        return _get_secret(f"{self.env}-prebuilts-db-port")
+
 
 def _get_secret(secret: str, version: str = "latest") -> str:
     """Gets a secret from the Secret Manager.

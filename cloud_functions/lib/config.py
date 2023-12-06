@@ -34,8 +34,12 @@ class ConfigReader:
         return {
             "lookup_service_db": {
                 "database": secrets.database_name,
-                "host": os.environ.get("PREBUILTS_SQL_INSTANCE_HOST"),
-                "port": os.environ.get("PREBUILTS_SQL_INSTANCE_PORT"),
+                # Allow database host, port to be overwritten by env variables,
+                # for local testing and development.
+                "host": os.environ.get("PREBUILTS_SQL_INSTANCE_HOST")
+                or secrets.database_host,
+                "port": os.environ.get("PREBUILTS_SQL_INSTANCE_PORT")
+                or secrets.database_port,
                 "username": secrets.user,
                 "password": secrets.password,
             },
