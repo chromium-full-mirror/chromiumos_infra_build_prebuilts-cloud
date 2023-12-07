@@ -1,4 +1,5 @@
 steps:
+# Cloud function to lookup binhosts.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   args:
   - gcloud
@@ -13,6 +14,18 @@ steps:
   - --service-account=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
   - --source=cloud_functions/.
   - --trigger-http
+# IAM policy binding to make the lookup binhosts endpoint public.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args:
+  - gcloud
+  - run
+  - services
+  - add-iam-policy-binding
+  - staging-lookup-service-binhosts
+  - --member=allUsers
+  - --region=us-central1
+  - --role=roles/run.invoker
+# Cloud function to update binhost metadata.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   args:
   - gcloud
@@ -31,6 +44,7 @@ steps:
   - --source=cloud_functions/.
   - --trigger-topic=staging-update_binhost_data
   - --vpc-connector=staging-prebuilts-conn
+# Cloud function to update snapshot metadata.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   args:
   - gcloud
