@@ -1,6 +1,7 @@
 steps:
 # Cloud function to lookup binhosts.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'lookup_service_binhosts'
   args:
   - gcloud
   - functions
@@ -16,6 +17,8 @@ steps:
   - --trigger-http
 # IAM policy binding to make the lookup binhosts endpoint public.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  waitFor:
+    - 'lookup_service_binhosts'
   args:
   - gcloud
   - run
@@ -26,40 +29,28 @@ steps:
   - --region=us-central1
   - --role=roles/run.invoker
 # Cloud function to update binhost metadata.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  waitFor:
+  - '-'
   args:
-  - gcloud
-  - functions
-  - deploy
-  - prod-update-service-binhost-data
-  - --egress-settings=private-ranges-only
-  - --entry-point=update_service
-  - --env-vars-file=cloudbuild/.env.prod.yaml
-  - --gen2
-  - --ingress-settings=internal-only
-  - --region=us-central1
-  - --retry
-  - --runtime=python38
-  - --service-account=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
-  - --source=cloud_functions/.
-  - --trigger-topic=prod-update_binhost_data
-  - --vpc-connector=prod-prebuilts-conn
+    - 'cloudbuild/deploy_update_service_function.sh'
+  env:
+  - 'ENV_FILE=cloudbuild/.env.prod.yaml'
+  - 'FUNCTION_NAME=test-update-service-binhosts'
+  - 'TOPIC_NAME=prod-update_binhost_data'
+  - 'VPC_CONNECTOR=prod-prebuilts-conn'
+  - 'SERVICE_ACCOUNT=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'
 # Cloud function to update snapshot metadata.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  waitFor:
+    - '-'
   args:
-  - gcloud
-  - functions
-  - deploy
-  - prod-update-service-snapshot-data
-  - --egress-settings=private-ranges-only
-  - --entry-point=update_service
-  - --env-vars-file=cloudbuild/.env.prod.yaml
-  - --gen2
-  - --ingress-settings=internal-only
-  - --region=us-central1
-  - --retry
-  - --runtime=python38
-  - --service-account=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
-  - --source=cloud_functions/.
-  - --trigger-topic=prod-update_snapshot_data
-  - --vpc-connector=prod-prebuilts-conn
+    - 'cloudbuild/deploy_update_service_function.sh'
+  env:
+  - 'ENV_FILE=cloudbuild/.env.prod.yaml'
+  - 'FUNCTION_NAME=test-update-service-snapshots'
+  - 'TOPIC_NAME=prod-update_snapshot_data'
+  - 'VPC_CONNECTOR=prod-prebuilts-conn'
+  - 'SERVICE_ACCOUNT=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'
