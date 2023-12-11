@@ -5,6 +5,7 @@
 """Update operations on the `lookup_service` database."""
 
 import base64
+import logging
 import re
 from typing import Tuple
 
@@ -76,6 +77,7 @@ def process_pubsub_message(cloud_event: CloudEvent) -> None:
     )
 
     msg_data, pubsub_topic_name = _parse_pubsub_msg(cloud_event)
+    logging.info("Update request for PubSub topic: %s", pubsub_topic_name)
     if pubsub_topic_name == config.READER.get("topics")["update_snapshot_data"]:
         update_snapshot_data(lookup_service_db_connection, msg_data)
     elif (
@@ -109,9 +111,11 @@ def update_snapshot_data(
     try:
         snapshot_data.ParseFromString(msg_data)
     except DecodeError as err:
-        raise UpdateOperationsError(
-            "Unable to parse snapshot data from Pub/Sub message."
-        ) from err
+        error_msg = "Unable to parse snapshot data from Pub/Sub message."
+        logging.error(error_msg)
+        logging.error(err)
+        raise UpdateOperationsError(error_msg) from err
+    logging.info("Update snapshot data request: \n%s", snapshot_data)
     snapshot_args = {
         "snapshot_sha": snapshot_data.snapshot_sha,
         "snapshot_num": snapshot_data.snapshot_num,
@@ -124,8 +128,10 @@ def update_snapshot_data(
     )
 
     if not existing_snapshot:
+        logging.info("Updating existing snapshot record.")
         lookup_service_db_connection.snapshots_create(**snapshot_args)
     else:
+        logging.info("Creating new snapshot record.")
         lookup_service_db_connection.snapshots_update(**snapshot_args)
 
 
@@ -153,10 +159,12 @@ def update_binhost_data(
     try:
         binhost_data.ParseFromString(msg_data)
     except DecodeError as err:
-        raise UpdateOperationsError(
-            "Unable to parse binhost data from Pub/Sub message."
-        ) from err
+        error_message = "Unable to parse binhost data from Pub/Sub message."
+        logging.error(error_message)
+        logging.error(err)
+        raise UpdateOperationsError(error_message) from err
 
+    logging.info("Update binhost data request: \n%s", binhost_data)
     build_target_profiles = (
         lookup_service_db_connection.build_target_profiles_filter(
             (
@@ -181,6 +189,10 @@ def update_binhost_data(
         build_target_profile_id = (
             created_build_target_profile.build_target_profile_id
         )
+        logging.info(
+            "Created new build_target_profile record with id: %s",
+            build_target_profile_id,
+        )
 
     binhost_args = {
         "build_target_profile_id": build_target_profile_id,
@@ -195,9 +207,20 @@ def update_binhost_data(
         f"gs_uri='{binhost_data.gs_uri}'", limit=1
     )
     if existing_binhosts:
+        existing_binhost_id = existing_binhosts[0].binhost_id
         lookup_service_db_connection.binhosts_update(
-            binhost_id=existing_binhosts[0].binhost_id,
+            binhost_id=existing_binhost_id,
             **binhost_args,
         )
+        logging.info(
+            "Updated existing binhost record with binhost id: %d",
+            existing_binhost_id,
+        )
     else:
-        lookup_service_db_connection.binhosts_create(**binhost_args)
+        new_binhost = lookup_service_db_connection.binhosts_create(
+            **binhost_args
+        )
+        logging.info(
+            "Created a new binhost record with binhost id: %d",
+            new_binhost.binhost_id,
+        )

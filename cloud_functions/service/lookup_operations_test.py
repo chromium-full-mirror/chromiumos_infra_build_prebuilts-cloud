@@ -142,6 +142,60 @@ def test_lookup_binhosts_bad_request(
     )
 
 
+def test_lookup_binhosts_build_target_profile_not_found(
+    mock_db_connection_lookup_binhosts: mock.Mock,
+    mock_lookup_binhosts_request_b64: str,
+    monkeypatch,
+):
+    """Test lookup_binhosts when build target profile is not found."""
+    request = mock.Mock()
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=False
+    )
+
+    # Mock _lookup_build_target_profile_id to return None.
+    mock_lookup_build_target_profile_id = mock.Mock()
+    monkeypatch.setattr(
+        lookup_operations,
+        "_lookup_build_target_profile_id",
+        mock_lookup_build_target_profile_id,
+    )
+    mock_lookup_build_target_profile_id.return_value = None
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 404
+    assert response.data == b"Build target profile not found."
+
+
+def test_lookup_binhosts_generic_build_target_profile_not_found(
+    mock_db_connection_lookup_binhosts: mock.Mock,
+    mock_lookup_binhosts_request_b64: str,
+    monkeypatch,
+):
+    """Test lookup_binhosts when generic build target profile is not found."""
+    request = mock.Mock()
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=False
+    )
+
+    # Mock _lookup_build_target_profile_id to return None.
+    mock_lookup_build_target_profile_id = mock.Mock()
+    monkeypatch.setattr(
+        lookup_operations,
+        "_lookup_build_target_profile_id",
+        mock_lookup_build_target_profile_id,
+    )
+    mock_lookup_build_target_profile_id.side_effect = [1, None]
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 404
+    assert response.data == b"Generic build target profile not found."
+
+
 def test_lookup_binhosts_binhosts_not_found(
     mock_db_connection_lookup_binhosts: mock.Mock,
     mock_lookup_binhosts_request_b64: str,
@@ -159,4 +213,4 @@ def test_lookup_binhosts_binhosts_not_found(
         request, mock_db_connection_lookup_binhosts
     )
     assert response.status_code == 404
-    assert response.data == b"No binhosts found with the given parameters"
+    assert response.data == b"No binhosts found with the given parameters."

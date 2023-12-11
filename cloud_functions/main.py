@@ -4,6 +4,9 @@
 
 """Cloud Functions entry point implementations."""
 
+import logging
+import os
+
 # pylint: disable=import-error
 from cloudevents.http import event
 import flask
@@ -19,6 +22,12 @@ from service import update_operations
 
 # Initialize default configuration.
 config.READER.initialize_defaults()
+
+# Configure the logging module.
+logging.basicConfig(
+    format="%(levelname)s:%(message)s",
+    level=os.environ.get("LOGLEVEL", "INFO").upper(),
+)
 
 
 @functions_framework.http
