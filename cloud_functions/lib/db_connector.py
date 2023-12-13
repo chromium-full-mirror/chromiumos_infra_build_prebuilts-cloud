@@ -588,7 +588,7 @@ class LookupServiceDBConnection:
 
     def get_corresponding_snapshot_shas(
         self, snapshot_shas: List[str], private: bool
-    ) -> List[Optional[models.Snapshots]]:
+    ) -> List[Optional[str]]:
         """Query for the corresponding public or private snapshot SHAs.
 
         If the provided SHAs are public, return the corresponding private SHAs.
@@ -621,8 +621,9 @@ class LookupServiceDBConnection:
         )
 
         query = self._session.query(models.Snapshots).from_statement(statement)
+        snapshots = self._execute_query(query)
 
-        return self._execute_query(query)
+        return [x.snapshot_sha for x in snapshots]
 
     def query_binhosts(
         self,
