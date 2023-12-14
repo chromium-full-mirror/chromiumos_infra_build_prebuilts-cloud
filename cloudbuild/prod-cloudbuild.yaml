@@ -37,7 +37,7 @@ steps:
     - 'cloudbuild/deploy_update_service_function.sh'
   env:
   - 'ENV_FILE=cloudbuild/.env.prod.yaml'
-  - 'FUNCTION_NAME=test-update-service-binhosts'
+  - 'FUNCTION_NAME=prod-update-service-binhost-data'
   - 'TOPIC_NAME=prod-update_binhost_data'
   - 'VPC_CONNECTOR=prod-prebuilts-conn'
   - 'SERVICE_ACCOUNT=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'
@@ -50,7 +50,7 @@ steps:
     - 'cloudbuild/deploy_update_service_function.sh'
   env:
   - 'ENV_FILE=cloudbuild/.env.prod.yaml'
-  - 'FUNCTION_NAME=test-update-service-snapshots'
+  - 'FUNCTION_NAME=prod-update-service-snapshot-data'
   - 'TOPIC_NAME=prod-update_snapshot_data'
   - 'VPC_CONNECTOR=prod-prebuilts-conn'
   - 'SERVICE_ACCOUNT=prod-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'

@@ -37,7 +37,7 @@ steps:
     - 'cloudbuild/deploy_update_service_function.sh'
   env:
   - 'ENV_FILE=cloudbuild/.env.staging.yaml'
-  - 'FUNCTION_NAME=test-update-service-binhosts'
+  - 'FUNCTION_NAME=staging-update-service-binhost-data'
   - 'TOPIC_NAME=staging-update_binhost_data'
   - 'VPC_CONNECTOR=staging-prebuilts-conn'
   - 'SERVICE_ACCOUNT=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'
@@ -50,7 +50,7 @@ steps:
     - 'cloudbuild/deploy_update_service_function.sh'
   env:
   - 'ENV_FILE=cloudbuild/.env.staging.yaml'
-  - 'FUNCTION_NAME=test-update-service-snapshots'
+  - 'FUNCTION_NAME=staging-update-service-snapshot-data'
   - 'TOPIC_NAME=staging-update_snapshot_data'
   - 'VPC_CONNECTOR=staging-prebuilts-conn'
   - 'SERVICE_ACCOUNT=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com'
