@@ -15,6 +15,7 @@ steps:
   - --service-account=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
   - --source=cloud_functions/.
   - --trigger-http
+  - --timeout=60
 # IAM policy binding to make the lookup binhosts endpoint public.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   waitFor:

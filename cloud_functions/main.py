@@ -50,9 +50,12 @@ def lookup_service_binhosts(request: flask.wrappers.Request) -> flask.Response:
         **config.READER.get("lookup_service_db")
     )
 
-    return lookup_operations.lookup_binhosts(
+    binhosts_response = lookup_operations.lookup_binhosts(
         request, lookup_service_db_connection
     )
+
+    lookup_service_db_connection.close_connection()
+    return binhosts_response
 
 
 @functions_framework.cloud_event

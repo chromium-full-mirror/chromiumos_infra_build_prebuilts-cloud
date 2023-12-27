@@ -4,6 +4,7 @@
 
 """Functionality for performing database operations."""
 
+import os
 from typing import Any, List, Optional
 
 # pylint: disable=import-error
@@ -62,7 +63,10 @@ class LookupServiceDBConnection:
                 port=self.port,
                 username=self.username,
                 password=self.password,
-            )
+            ),
+            connect_args={
+                "timeout": int(os.environ.get("SQL_CONNECTION_TIMEOUT"))
+            },
         )
 
         return engine
@@ -87,7 +91,8 @@ class LookupServiceDBConnection:
         """
         try:
             self._session.commit()
-        except sqlalchemy.exc.DBAPIError as sql_error:
+        except Exception as sql_error:
+            self.close_connection()
             raise DBError(error_msg) from sql_error
 
     def _execute_filter(
@@ -119,7 +124,8 @@ class LookupServiceDBConnection:
             query = query.limit(limit)
         try:
             result = query.all()
-        except sqlalchemy.exc.DBAPIError as sql_error:
+        except Exception as sql_error:
+            self.close_connection()
             raise DBError(
                 "Error when executing the filter query."
             ) from sql_error
@@ -144,9 +150,19 @@ class LookupServiceDBConnection:
         """
         try:
             result = sql_query.all()
-        except sqlalchemy.exc.DBAPIError as sql_error:
+        except Exception as sql_error:
+            self.close_connection()
             raise DBError("Error when executing the sql query.") from sql_error
         return result
+
+    def close_connection(self) -> None:
+        """Close all connections and dispose the sqlalchemy engine.
+
+        This needs to be called to ensure that all DBAPI connections to the
+        SQL instance are closed.
+        """
+        self._session.close()
+        self._engine.dispose()
 
     def snapshots_create(
         self,

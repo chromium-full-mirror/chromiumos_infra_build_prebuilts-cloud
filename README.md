@@ -28,6 +28,7 @@ A Cloud Build trigger can be run manually by following the steps [here](https://
 #### Runtime environment variables for the lookup service cloud function:
 
 - ENV : Environment, can be one of staging, prod.
+- SQL_CONNECTION_TIMEOUT : Connection timeout for the sqlalchemy engine.
 - PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql instance.
 - PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
 

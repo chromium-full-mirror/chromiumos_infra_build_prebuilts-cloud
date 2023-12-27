@@ -28,6 +28,7 @@ gcloud functions deploy "${FUNCTION_NAME}" \
 --ingress-settings=internal-only --region=us-central1 --retry \
 --runtime=python38 --service-account="${SERVICE_ACCOUNT}" \
 --source=cloud_functions/. --trigger-topic="${TOPIC_NAME}" \
+--timeout=60 \
 --vpc-connector="${VPC_CONNECTOR}"
 
 # For gen2 cloud functions with an eventarc trigger, the corresponding PubSub

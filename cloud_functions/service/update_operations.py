@@ -89,6 +89,7 @@ def process_pubsub_message(cloud_event: CloudEvent) -> None:
             f"Could not process the message due to unknown Pub/Sub topic: "
             f"{pubsub_topic_name}."
         )
+    lookup_service_db_connection.close_connection()
 
 
 def update_snapshot_data(
