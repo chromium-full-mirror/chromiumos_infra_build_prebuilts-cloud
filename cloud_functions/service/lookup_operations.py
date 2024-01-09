@@ -157,7 +157,6 @@ def lookup_binhosts(
     if build_target_profile_id is None:
         error_msg = "Build target profile not found."
         logging.info(error_msg)
-        return flask.Response(response=error_msg, status=404)
 
     generic_build_target_profile_id = _lookup_build_target_profile_id(
         lookup_service_db_connection,
@@ -168,7 +167,6 @@ def lookup_binhosts(
     if generic_build_target_profile_id is None:
         error_msg = "Generic build target profile not found."
         logging.info(error_msg)
-        return flask.Response(response=error_msg, status=404)
 
     # Fetch the binhosts from the DB.
     private = lookup_service_request.private
@@ -181,22 +179,24 @@ def lookup_binhosts(
                 private=True,
             )
         )
-        binhosts.extend(
-            lookup_service_db_connection.query_binhosts(
-                lookup_service_request.gs_bucket_name,
-                lookup_service_request.snapshot_shas,
-                build_target_profile_id,
-                private=True,
+        if build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    lookup_service_request.snapshot_shas,
+                    build_target_profile_id,
+                    private=True,
+                )
             )
-        )
-        binhosts.extend(
-            lookup_service_db_connection.query_binhosts(
-                lookup_service_request.gs_bucket_name,
-                external_shas,
-                generic_build_target_profile_id,
-                private=False,
+        if generic_build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    external_shas,
+                    generic_build_target_profile_id,
+                    private=False,
+                )
             )
-        )
     # Partners case.
     elif not private and lookup_service_request.get_corresponding_binhosts:
         internal_shas = (
@@ -205,32 +205,35 @@ def lookup_binhosts(
                 private=False,
             )
         )
-        binhosts.extend(
-            lookup_service_db_connection.query_binhosts(
-                lookup_service_request.gs_bucket_name,
-                internal_shas,
-                build_target_profile_id,
-                private=True,
+        if build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    internal_shas,
+                    build_target_profile_id,
+                    private=True,
+                )
             )
-        )
-        binhosts.extend(
-            lookup_service_db_connection.query_binhosts(
-                lookup_service_request.gs_bucket_name,
-                lookup_service_request.snapshot_shas,
-                generic_build_target_profile_id,
-                private=False,
+        if generic_build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    lookup_service_request.snapshot_shas,
+                    generic_build_target_profile_id,
+                    private=False,
+                )
             )
-        )
     # External developers case.
     else:
-        binhosts.extend(
-            lookup_service_db_connection.query_binhosts(
-                lookup_service_request.gs_bucket_name,
-                lookup_service_request.snapshot_shas,
-                generic_build_target_profile_id,
-                private=False,
+        if generic_build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    lookup_service_request.snapshot_shas,
+                    generic_build_target_profile_id,
+                    private=False,
+                )
             )
-        )
 
     if not binhosts:
         error_msg = "No binhosts found with the given parameters."

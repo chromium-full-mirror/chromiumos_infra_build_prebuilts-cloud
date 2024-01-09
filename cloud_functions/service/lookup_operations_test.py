@@ -166,7 +166,7 @@ def test_lookup_binhosts_build_target_profile_not_found(
         request, mock_db_connection_lookup_binhosts
     )
     assert response.status_code == 404
-    assert response.data == b"Build target profile not found."
+    assert response.data == b"No binhosts found with the given parameters."
 
 
 def test_lookup_binhosts_generic_build_target_profile_not_found(
@@ -193,7 +193,7 @@ def test_lookup_binhosts_generic_build_target_profile_not_found(
         request, mock_db_connection_lookup_binhosts
     )
     assert response.status_code == 404
-    assert response.data == b"Generic build target profile not found."
+    assert response.data == b"No binhosts found with the given parameters."
 
 
 def test_lookup_binhosts_binhosts_not_found(
