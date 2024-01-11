@@ -168,6 +168,7 @@ def lookup_binhosts(
         error_msg = "Generic build target profile not found."
         logging.info(error_msg)
 
+    logging.info("Now attempting to fetch binhosts...")
     # Fetch the binhosts from the DB.
     private = lookup_service_request.private
     binhosts = []
@@ -179,6 +180,7 @@ def lookup_binhosts(
                 private=True,
             )
         )
+        logging.info("Fetched corresponding external SHAs: %s", external_shas)
         if build_target_profile_id:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
@@ -205,6 +207,7 @@ def lookup_binhosts(
                 private=False,
             )
         )
+        logging.info("Fetched corresponding internal SHAs: %s", internal_shas)
         if build_target_profile_id:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
