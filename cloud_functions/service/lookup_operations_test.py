@@ -169,6 +169,24 @@ def test_lookup_binhosts_build_target_profile_not_found(
     assert response.data == b"No binhosts found with the given parameters."
 
 
+def test_lookup_binhosts_invalid_request(
+    mock_db_connection_lookup_binhosts: mock.Mock,
+    mock_lookup_binhosts_request_b64: str,
+):
+    """Test lookup_binhosts when request is invalid."""
+    request = mock.Mock()
+    # Don't send any snapshot SHAs.
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=False, snapshot_shas=[]
+    )
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 400
+    assert response.data == b"Invalid request, required parameters not present."
+
+
 def test_lookup_binhosts_generic_build_target_profile_not_found(
     mock_db_connection_lookup_binhosts: mock.Mock,
     mock_lookup_binhosts_request_b64: str,

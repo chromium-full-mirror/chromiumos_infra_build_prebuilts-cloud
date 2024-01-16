@@ -147,6 +147,12 @@ def lookup_binhosts(
             "Unable to parse filter parameters from the request.", status=400
         )
     logging.info("lookup_service_request: \n%s", lookup_service_request)
+
+    if not lookup_service_request.snapshot_shas:
+        error_msg = "Invalid request, required parameters not present."
+        logging.info(error_msg)
+        return flask.Response(error_msg, status=400)
+
     # Get the build_target_profile ids based on the filter parameters.
     build_target_profile_id = _lookup_build_target_profile_id(
         lookup_service_db_connection,
@@ -190,7 +196,7 @@ def lookup_binhosts(
                     private=True,
                 )
             )
-        if generic_build_target_profile_id:
+        if generic_build_target_profile_id and external_shas:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,
@@ -208,7 +214,7 @@ def lookup_binhosts(
             )
         )
         logging.info("Fetched corresponding internal SHAs: %s", internal_shas)
-        if build_target_profile_id:
+        if build_target_profile_id and internal_shas:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,

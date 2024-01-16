@@ -15,7 +15,7 @@
 import base64
 import datetime
 import decimal
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from unittest import mock
 
 # pylint: disable=import-error
@@ -290,12 +290,17 @@ def mock_lookup_binhosts_request_b64() -> bytes:
     """
 
     def _construct_request(
-        private: bool, get_corresponding_binhosts: bool
+        private: bool,
+        get_corresponding_binhosts: bool,
+        snapshot_shas: Optional[List[str]] = None,
     ) -> str:
         """Construct a binhosts lookup request."""
+        if snapshot_shas is None:
+            snapshot_shas = ["test_sha"]
+
         req = prebuilts_cloud_pb2.LookupBinhostsRequest(
             gs_bucket_name="test_bucket",
-            snapshot_shas=["test_sha"],
+            snapshot_shas=snapshot_shas,
             build_target="test_target",
             profile="base",
             private=private,
