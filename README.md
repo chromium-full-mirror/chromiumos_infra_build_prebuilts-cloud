@@ -2,14 +2,16 @@
 
 This repo houses all the GCP code for the `chromeos-prebuilts` project.
 
+Most of the GCP resources are defined and deployed through a terraform+annealing setup as per go/cciac. The terraform code for the resources is defined in the [chromeos_prebuilts](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts) folder.
+
+Some resources are deployed through Cloud Build and some are managed and deployed manually. Details for how different resource types are managed is documented below.
+
 ## Cloud Functions
 
 We're using Cloud Functions as a serverless platform for the lookup service.
 
 The entry points for the Cloud Functions are defined in `cloud_functions/main.py`.
 Each entry point has a `functions_framework` decorator which helps receive the function arguments based on the signature type specified.
-
-Cloud Functions creation is managed via Terraform. TODO add more info here.
 
 ### Deployment
 
@@ -24,6 +26,8 @@ During a build, a few things happen:
 * The GCB User will add the Verified+1 label and a comment to your Gerrit change upon a successful build. [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
 A Cloud Build trigger can be run manually by following the steps [here](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head#running-triggers). Once a CL successfully merged, a separate trigger deploys the latest source code to production.
+
+The scripts and config files for the the cloud build deployments are in the `cloudbuild/` folder.
 
 #### Runtime environment variables for the lookup service cloud function:
 
@@ -124,23 +128,7 @@ With 2nd gen cloud functions, each function can only have one trigger. So each P
 
 ### Deployment
 
-**During initial development, we are manually creating Pub/Sub schemas, topics and corresponding subscriptions via Google Cloud console.
-DO NOT deploy to production instances as the production deployment process will be automated later.**
-
-Steps for setting up Pub/Sub topics (this needs to be done for each topic):
-
-1. In Google Cloud console, go to `Pub/Sub`.
-2. Create Schema (used for validating Pub/Sub message format):
-    - Go to `Schemas` and click `Create Schema`.
-    - Type a Schema ID and select `Schema type=Protocol Buffer`.
-    - Enter the protocol buffer definition for this schema and create the schema.
-    - Note: The same protobuf schema definition is used in the `update_service` cloud function to consume messages from this topic.
-3. Create Pub/Sub topic:
-    - Go to `Topics` and click `Create topic`.
-    - Type a Topic ID and check the `Use a schema` box, select the previously created schema and encoding `type=Binary`. Select the `Enable message retention` box with `Days=7`.
-    - Use the default `Google-managed encryption key`.
-4. Trigger for the `update_service` cloud function:
-    - When creating the cloud function, an `Eventarc trigger` is enabled with the corresponding topic, so the subscription is automatically created with this step.
+PubSub topics are defined and deployed through terraform, in the [chromeos_prebuilts](http://google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/) folder.
 
 
 ## Protocol Buffers
