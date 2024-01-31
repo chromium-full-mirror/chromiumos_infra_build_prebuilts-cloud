@@ -530,6 +530,39 @@ def test_get_corresponding_snapshot_shas_not_found(
     )
 
 
+def test_get_additional_snapshot_shas(
+    mock_snapshot_object: models.Snapshots,
+    mock_db_connection: db_connector.LookupServiceDBConnection,
+    mock_snapshot_objects_list: List[models.Snapshots],
+):
+    """Test the custom method to get additional snapshot SHAs."""
+    # Mock the response from the SQL query.
+    mock_db_connection._session.query.return_value.from_statement.return_value.all.return_value = [  # pylint: disable=line-too-long
+        mock_snapshot_object
+    ]
+    mock_snapshot_shas = [x.snapshot_sha for x in mock_snapshot_objects_list]
+
+    assert (
+        mock_db_connection.get_additional_snapshot_shas(["test_sha"], False, 1)
+        == mock_snapshot_shas
+    )
+
+
+def test_get_additional_snapshot_shas_not_found(
+    mock_db_connection: db_connector.LookupServiceDBConnection,
+):
+    """Test the custom method to get additional snapshot SHAs."""
+    # Mock the response from the SQL query.
+    mock_db_connection._session.query.return_value.from_statement.return_value.all.return_value = (  # pylint: disable=line-too-long
+        []
+    )
+
+    assert (
+        mock_db_connection.get_additional_snapshot_shas(["test_sha"], False, 10)
+        == []
+    )
+
+
 def test_query_binhosts(
     mock_query_binhosts_object: models.Binhosts,
     mock_db_connection: db_connector.LookupServiceDBConnection,

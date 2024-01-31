@@ -174,17 +174,24 @@ def lookup_binhosts(
         error_msg = "Generic build target profile not found."
         logging.info(error_msg)
 
-    logging.info("Now attempting to fetch binhosts...")
-    # Fetch the binhosts from the DB.
-    private = lookup_service_request.private
     binhosts = []
+    private = lookup_service_request.private
+
+    # Get additional snapshot SHAs.
+    snapshot_shas = lookup_service_db_connection.get_additional_snapshot_shas(
+        lookup_service_request.snapshot_shas, private, count=50
+    )
+
+    # Fetch the binhosts from the DB.
+    logging.info("Now attempting to fetch binhosts...")
+
     # Googlers case.
     if private:
         # Only local builds will require corresponding binhosts.
         if lookup_service_request.get_corresponding_binhosts:
             external_shas = (
                 lookup_service_db_connection.get_corresponding_snapshot_shas(
-                    lookup_service_request.snapshot_shas,
+                    snapshot_shas,
                     private=True,
                 )
             )
@@ -204,7 +211,7 @@ def lookup_binhosts(
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,
-                    lookup_service_request.snapshot_shas,
+                    snapshot_shas,
                     build_target_profile_id,
                     private=True,
                 )
@@ -213,7 +220,7 @@ def lookup_binhosts(
     elif not private and lookup_service_request.get_corresponding_binhosts:
         internal_shas = (
             lookup_service_db_connection.get_corresponding_snapshot_shas(
-                lookup_service_request.snapshot_shas,
+                snapshot_shas,
                 private=False,
             )
         )
@@ -231,7 +238,7 @@ def lookup_binhosts(
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,
-                    lookup_service_request.snapshot_shas,
+                    snapshot_shas,
                     generic_build_target_profile_id,
                     private=False,
                 )
@@ -242,7 +249,7 @@ def lookup_binhosts(
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,
-                    lookup_service_request.snapshot_shas,
+                    snapshot_shas,
                     generic_build_target_profile_id,
                     private=False,
                 )
@@ -253,11 +260,13 @@ def lookup_binhosts(
         logging.info(error_msg)
         return flask.Response(error_msg, status=404)
 
-    binhost_ids = [x.binhost_id for x in binhosts]
+    binhosts_to_return = binhosts[:5]  # Limit the number of binhosts returned.
+
+    binhost_ids = [x.binhost_id for x in binhosts_to_return]
     # Update the `last_accessed` column with the current timestamp.
     lookup_service_db_connection.update_binhosts_last_accessed(binhost_ids)
 
-    logging.info("Found binhosts: %s", binhosts)
+    logging.info("Found binhosts: %s", binhosts_to_return)
     return flask.Response(
-        response=_construct_binhosts_response(binhosts), status=200
+        response=_construct_binhosts_response(binhosts_to_return), status=200
     )

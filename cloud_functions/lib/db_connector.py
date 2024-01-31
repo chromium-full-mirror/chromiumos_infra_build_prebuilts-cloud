@@ -16,6 +16,18 @@ import sqlalchemy.orm
 from lib import models
 
 
+def format_list_for_sql_query(input_list: List[str]) -> str:
+    """Format a list of strings so they can be used in a SQL query.
+
+    Args:
+        input_list: List of strings.
+
+    Returns:
+        A comma separated string containing the input elements.
+    """
+    return ",".join(f"'{x}'" for x in input_list)
+
+
 class DBError(Exception):
     """Base error class for the module."""
 
@@ -621,7 +633,7 @@ class LookupServiceDBConnection:
             DBError: When the sql query fails.
         """
         # Construct string of snapshot SHAs, to be used in the SQL query.
-        snapshot_shas_formatted = ",".join(f"'{x}'" for x in snapshot_shas)
+        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
 
         statement = sqlalchemy.text(
             "SELECT snapshot_sha "
@@ -630,6 +642,47 @@ class LookupServiceDBConnection:
             "(SELECT snapshot_num FROM snapshots "
             f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) AND "
             f"external={private}"
+        )
+        # Specify the columns for SQLAlchemy ORM mapping.
+        statement = statement.columns(
+            models.Snapshots.snapshot_sha,
+        )
+
+        query = self._session.query(models.Snapshots).from_statement(statement)
+        snapshots = self._execute_query(query)
+
+        return [x.snapshot_sha for x in snapshots]
+
+    def get_additional_snapshot_shas(
+        self, snapshot_shas: List[str], private: bool, count: int
+    ) -> List[Optional[str]]:
+        """Get additional prior snapshot SHAs based on the input SHAs.
+
+        Get additional snapshot SHAs with snapshot number lesser than the max
+        snapshot number of the SHAs passed in the input.
+
+        Args:
+            snapshot_shas: A list of snapshot SHAs.
+            private: True if the provided list of SHAs are private.
+            count: Number of snapshot SHAs to return.
+
+        Returns:
+            A list of snapshot SHAs, if found.
+
+        Raises:
+            DBError: When the sql query fails.
+        """
+        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
+
+        statement = sqlalchemy.text(
+            "SELECT snapshot_sha "
+            "FROM snapshots "
+            "WHERE snapshot_num < "
+            "(SELECT MAX(snapshot_num) FROM snapshots "
+            f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) "
+            f"AND external != {private} "
+            "ORDER BY snapshot_num DESC "
+            f"LIMIT {count}"
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(
@@ -670,7 +723,7 @@ class LookupServiceDBConnection:
             DBError: When the sql query fails.
         """
         # Construct string of snapshot SHAs, to be used in the SQL query.
-        snapshot_shas_formatted = ",".join(f"'{x}'" for x in snapshot_shas)
+        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
 
         statement = sqlalchemy.text(
             "SELECT binhost_id, gs_uri, "
