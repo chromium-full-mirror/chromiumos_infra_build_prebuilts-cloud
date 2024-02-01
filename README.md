@@ -113,11 +113,10 @@ To manually deploy changes:
 
 The following steps can be used to connect to the database and verify deployments and/or query data:
 
-1. SSH to the VM [instance](https://pantheon.corp.google.com/compute/instances?onCreate=true&project=chromeos-prebuilts) created for the project.
-2. Open (2) SSH connections to the `cloudsql-connection` instance.
-3. In the (1) SSH-in-browser window, run `./cloud_sql_proxy -instances=chromeos-prebuilts:us-central1:prebuilts-staging=tcp:5432`.
-4. In the (2) SSH-in-browser window, run `psql "host=127.0.0.1 port=5432 sslmode=disable dbname=lookup_service user=postgres"`.
-5. The postgres user password can be found [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
+1. Open a Cloud Shell console.
+2. Run `./cloud-sql-proxy --port 5432 chromeos-prebuilts:us-central1:staging-prebuilts`.
+3. In a separate tab, run `psql "host=127.0.0.1 sslmode=disable dbname=lookup_service user=postgres"`.
+4. The postgres user password can be found [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
 
 ## Pub/Sub
 
