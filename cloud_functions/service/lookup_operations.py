@@ -179,14 +179,27 @@ def lookup_binhosts(
     private = lookup_service_request.private
     binhosts = []
     # Googlers case.
-    if private and lookup_service_request.get_corresponding_binhosts:
-        external_shas = (
-            lookup_service_db_connection.get_corresponding_snapshot_shas(
-                lookup_service_request.snapshot_shas,
-                private=True,
+    if private:
+        # Only local builds will require corresponding binhosts.
+        if lookup_service_request.get_corresponding_binhosts:
+            external_shas = (
+                lookup_service_db_connection.get_corresponding_snapshot_shas(
+                    lookup_service_request.snapshot_shas,
+                    private=True,
+                )
             )
-        )
-        logging.info("Fetched corresponding external SHAs: %s", external_shas)
+            logging.info(
+                "Fetched corresponding external SHAs: %s", external_shas
+            )
+            if generic_build_target_profile_id and external_shas:
+                binhosts.extend(
+                    lookup_service_db_connection.query_binhosts(
+                        lookup_service_request.gs_bucket_name,
+                        external_shas,
+                        generic_build_target_profile_id,
+                        private=False,
+                    )
+                )
         if build_target_profile_id:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
@@ -194,15 +207,6 @@ def lookup_binhosts(
                     lookup_service_request.snapshot_shas,
                     build_target_profile_id,
                     private=True,
-                )
-            )
-        if generic_build_target_profile_id and external_shas:
-            binhosts.extend(
-                lookup_service_db_connection.query_binhosts(
-                    lookup_service_request.gs_bucket_name,
-                    external_shas,
-                    generic_build_target_profile_id,
-                    private=False,
                 )
             )
     # Partners case.
