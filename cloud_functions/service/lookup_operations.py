@@ -185,7 +185,7 @@ def lookup_binhosts(
     # Fetch the binhosts from the DB.
     logging.info("Now attempting to fetch binhosts...")
 
-    # Googlers case.
+    # Internal case.
     if private:
         # Only local builds will require corresponding binhosts.
         if lookup_service_request.get_corresponding_binhosts:
@@ -243,14 +243,14 @@ def lookup_binhosts(
                     private=False,
                 )
             )
-    # External developers case.
+    # External case.
     else:
-        if generic_build_target_profile_id:
+        if build_target_profile_id:
             binhosts.extend(
                 lookup_service_db_connection.query_binhosts(
                     lookup_service_request.gs_bucket_name,
                     snapshot_shas,
-                    generic_build_target_profile_id,
+                    build_target_profile_id,
                     private=False,
                 )
             )

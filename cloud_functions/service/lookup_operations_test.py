@@ -71,7 +71,7 @@ def test__construct_binhosts_response(
     assert lookup_binhosts_response == mock_lookup_binhosts_response_b64
 
 
-def test_lookup_binhosts_googlers(
+def test_lookup_binhosts_internal(
     mock_lookup_binhosts_request_b64: str,
     mock_lookup_binhosts_response_b64: str,
     mock_db_connection_lookup_binhosts: mock.Mock,
@@ -205,7 +205,7 @@ def test_lookup_binhosts_generic_build_target_profile_not_found(
         "_lookup_build_target_profile_id",
         mock_lookup_build_target_profile_id,
     )
-    mock_lookup_build_target_profile_id.side_effect = [1, None]
+    mock_lookup_build_target_profile_id.side_effect = [None, None]
 
     response = lookup_operations.lookup_binhosts(
         request, mock_db_connection_lookup_binhosts
