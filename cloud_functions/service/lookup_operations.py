@@ -182,6 +182,11 @@ def lookup_binhosts(
         lookup_service_request.snapshot_shas, private, count=50
     )
 
+    if not snapshot_shas:
+        error_msg = "Snapshot SHAs not found."
+        logging.info(error_msg)
+        return flask.Response(error_msg, status=404)
+
     # Fetch the binhosts from the DB.
     logging.info("Now attempting to fetch binhosts...")
 

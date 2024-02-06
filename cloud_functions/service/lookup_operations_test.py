@@ -214,6 +214,28 @@ def test_lookup_binhosts_generic_build_target_profile_not_found(
     assert response.data == b"No binhosts found with the given parameters."
 
 
+def test_lookup_binhosts_additional_shas_not_found(
+    mock_db_connection_lookup_binhosts: mock.Mock,
+    mock_lookup_binhosts_request_b64: str,
+):
+    """Test lookup_binhosts when additional snapshot SHAs are not found."""
+    request = mock.Mock()
+    request.args.get.return_value = mock_lookup_binhosts_request_b64(
+        private=False, get_corresponding_binhosts=False
+    )
+
+    # Overwrite the fixture return value so that no snapshot SHAs are found.
+    mock_db_connection_lookup_binhosts.get_additional_snapshot_shas.return_value = (  # pylint: disable=line-too-long
+        []
+    )
+
+    response = lookup_operations.lookup_binhosts(
+        request, mock_db_connection_lookup_binhosts
+    )
+    assert response.status_code == 404
+    assert response.data == b"Snapshot SHAs not found."
+
+
 def test_lookup_binhosts_binhosts_not_found(
     mock_db_connection_lookup_binhosts: mock.Mock,
     mock_lookup_binhosts_request_b64: str,
