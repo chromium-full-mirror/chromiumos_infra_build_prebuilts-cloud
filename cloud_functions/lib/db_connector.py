@@ -677,7 +677,7 @@ class LookupServiceDBConnection:
         statement = sqlalchemy.text(
             "SELECT snapshot_sha "
             "FROM snapshots "
-            "WHERE snapshot_num < "
+            "WHERE snapshot_num <= "
             "(SELECT MAX(snapshot_num) FROM snapshots "
             f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) "
             f"AND external != {private} "
