@@ -727,13 +727,15 @@ class LookupServiceDBConnection:
 
         statement = sqlalchemy.text(
             "SELECT binhost_id, gs_uri, "
-            "EXTRACT(EPOCH FROM created_at) AS created_at "
-            "FROM binhosts "
+            "EXTRACT(EPOCH FROM b.created_at) AS created_at "
+            "FROM binhosts AS b "
+            "LEFT JOIN snapshots AS s "
+            "ON b.snapshot_sha = s.snapshot_sha "
             f"WHERE gs_bucket_name='{gs_bucket_name}' AND "
-            f"snapshot_sha IN ({snapshot_shas_formatted}) AND "
+            f"b.snapshot_sha IN ({snapshot_shas_formatted}) AND "
             f"build_target_profile_id={build_target_profile_id} AND "
             f"private={private} "
-            "ORDER BY created_at DESC"
+            "ORDER BY snapshot_num DESC"
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(
