@@ -193,6 +193,15 @@ def lookup_binhosts(
 
     # Internal case.
     if private:
+        if build_target_profile_id:
+            binhosts.extend(
+                lookup_service_db_connection.query_binhosts(
+                    lookup_service_request.gs_bucket_name,
+                    snapshot_shas,
+                    build_target_profile_id,
+                    private=True,
+                )
+            )
         # Only local builds will require corresponding binhosts.
         if lookup_service_request.get_corresponding_binhosts:
             external_shas = (
@@ -213,15 +222,6 @@ def lookup_binhosts(
                         private=False,
                     )
                 )
-        if build_target_profile_id:
-            binhosts.extend(
-                lookup_service_db_connection.query_binhosts(
-                    lookup_service_request.gs_bucket_name,
-                    snapshot_shas,
-                    build_target_profile_id,
-                    private=True,
-                )
-            )
     # Partners case.
     elif not private and lookup_service_request.get_corresponding_binhosts:
         internal_shas = (
