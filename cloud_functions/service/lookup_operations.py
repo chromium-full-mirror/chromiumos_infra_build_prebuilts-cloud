@@ -177,9 +177,10 @@ def lookup_binhosts(
     binhosts = []
     private = lookup_service_request.private
 
-    # Get additional snapshot SHAs.
+    # Get additional snapshot SHAs. Look back 7 days * 24 hours * 2 snapshots
+    # per hour = 336.
     snapshot_shas = lookup_service_db_connection.get_additional_snapshot_shas(
-        lookup_service_request.snapshot_shas, private, count=50
+        lookup_service_request.snapshot_shas, private, count=336
     )
 
     if not snapshot_shas:
