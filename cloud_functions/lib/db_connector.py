@@ -735,7 +735,8 @@ class LookupServiceDBConnection:
             f"b.snapshot_sha IN ({snapshot_shas_formatted}) AND "
             f"build_target_profile_id={build_target_profile_id} AND "
             f"private={private} "
-            "ORDER BY snapshot_num DESC"
+            "ORDER BY snapshot_num DESC "
+            "LIMIT 5"
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(

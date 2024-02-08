@@ -266,13 +266,11 @@ def lookup_binhosts(
         logging.info(error_msg)
         return flask.Response(error_msg, status=404)
 
-    binhosts_to_return = binhosts[:5]  # Limit the number of binhosts returned.
-
-    binhost_ids = [x.binhost_id for x in binhosts_to_return]
+    binhost_ids = [x.binhost_id for x in binhosts]
     # Update the `last_accessed` column with the current timestamp.
     lookup_service_db_connection.update_binhosts_last_accessed(binhost_ids)
 
-    logging.info("Found binhosts: %s", binhosts_to_return)
+    logging.info("Found binhosts: %s", binhosts)
     return flask.Response(
-        response=_construct_binhosts_response(binhosts_to_return), status=200
+        response=_construct_binhosts_response(binhosts), status=200
     )
