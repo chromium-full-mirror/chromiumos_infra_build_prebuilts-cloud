@@ -157,3 +157,16 @@ GCP Secret Manager is used to store sensitive information that can be accessed b
 - prebuilts-db-port: Port of the database instance.
 
 NOTE: Name of each of these secrets is prefixed by the environment name. e.g. staging-prebuilts-db
+
+## Handling Alerts and Errors
+The cloud functions have alerts setup through GCP and the ChromeOS Build team is notified via email when the alert metric breaches the configured threshold (The alerts are configured via [terraform](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/)).
+
+The incidents can be viewed and managed in the [**Alerting**](https://pantheon.corp.google.com/monitoring/alerting?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) page in the cloud console. Gen 2 cloud functions use the Cloud run service, the best way to view the logs is to go to the specific cloud function page -> logs -> "View in logs explorer" icon. The logs can be filtered based on time, severity and other filters by altering the query. The incidents auto close when the metrics for the specific alert go back to within the threshold range.
+
+### Errors in the Lookup Service
+Errors in the lookup-service-binhosts cloud function usually mean the builders/developers did not get the required binhosts, these alerts need to be looked into and fixed so that the builds are fast and efficient.
+
+### Errors in the Update Service
+Errors in the update-service-snapshot-data, update-service-binhost-data cloud functions usually mean the data from the builders was not saved properly in the database. These alerts are very critical and we need to ensure that the messages are reprocessed after the issue is fixed.
+- The Pub/Sub subscriptions are set to retry failed messages with an exponential back off delay, this ensures that messages are retried (The retention duration is set in the topic and subscription) by the cloud functions till they are successfully processed and acknowledged.
+- Additionally, acknowledged messages can be replayed from a previous point in time by going to the subscription page and clicking on [Replay Messages](https://screenshot.googleplex.com/6nwuVZ8qiF7WR3p). This can be useful when we update the cloud function code/logic and want to reprocess already acknowledged messages. Note: Replaying messages won't result in duplicates in the DB even if the message was successfully processed before.
