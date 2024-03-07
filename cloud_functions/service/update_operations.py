@@ -72,6 +72,11 @@ def process_pubsub_message(cloud_event: CloudEvent) -> None:
     Raises:
         UnknownTopicError: When the received pubsub topic is unknown.
     """
+    logging.info(
+        "Update request with message data: %s",
+        cloud_event.data["message"]["data"],
+    )  # log the raw PubSub message data.
+
     lookup_service_db_connection = db_connector.LookupServiceDBConnection(
         **config.READER.get("lookup_service_db")
     )
