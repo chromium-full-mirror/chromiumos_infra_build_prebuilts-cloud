@@ -79,6 +79,7 @@ class LookupServiceDBConnection:
             connect_args={
                 "timeout": int(os.environ.get("SQL_CONNECTION_TIMEOUT"))
             },
+            pool_pre_ping=True,
         )
 
         return engine
