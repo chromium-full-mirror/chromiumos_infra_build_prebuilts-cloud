@@ -11,7 +11,7 @@ steps:
   - --env-vars-file=cloudbuild/.env.staging.yaml
   - --gen2
   - --region=us-central1
-  - --runtime=python38
+  - --runtime=python314
   - --service-account=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
   - --source=cloud_functions/.
   - --trigger-http

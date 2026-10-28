@@ -26,7 +26,7 @@ gcloud functions deploy "${FUNCTION_NAME}" \
 --egress-settings=private-ranges-only --entry-point=update_service \
 --env-vars-file="${ENV_FILE}" --gen2 \
 --ingress-settings=internal-only --region=us-central1 --retry \
---runtime=python38 --service-account="${SERVICE_ACCOUNT}" \
+--runtime=python314 --service-account="${SERVICE_ACCOUNT}" \
 --source=cloud_functions/. --trigger-topic="${TOPIC_NAME}" \
 --timeout=60 \
 --vpc-connector="${VPC_CONNECTOR}"
