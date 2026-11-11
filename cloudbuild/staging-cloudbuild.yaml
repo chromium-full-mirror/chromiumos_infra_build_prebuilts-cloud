@@ -12,6 +12,7 @@ steps:
   - --gen2
   - --region=us-central1
   - --runtime=python314
+  - --runtime-update-policy=automatic
   - --service-account=staging-binhost-lookup-service@chromeos-prebuilts.iam.gserviceaccount.com
   - --source=cloud_functions/.
   - --trigger-http
