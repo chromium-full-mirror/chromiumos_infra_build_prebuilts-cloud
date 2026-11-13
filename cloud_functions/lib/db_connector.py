@@ -16,18 +16,6 @@ import sqlalchemy.orm
 from lib import models
 
 
-def format_list_for_sql_query(input_list: List[str]) -> str:
-    """Format a list of strings so they can be used in a SQL query.
-
-    Args:
-        input_list: List of strings.
-
-    Returns:
-        A comma separated string containing the input elements.
-    """
-    return ",".join(f"'{x}'" for x in input_list)
-
-
 class DBError(Exception):
     """Base error class for the module."""
 
@@ -633,16 +621,19 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql query fails.
         """
-        # Construct string of snapshot SHAs, to be used in the SQL query.
-        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
-
         statement = sqlalchemy.text(
             "SELECT snapshot_sha "
             "FROM snapshots "
             "WHERE snapshot_num IN "
             "(SELECT snapshot_num FROM snapshots "
-            f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) AND "
-            f"external={private}"
+            "WHERE snapshot_sha IN :snapshot_shas) AND "
+            "external=:private"
+        )
+        statement = statement.bindparams(
+            sqlalchemy.bindparam(
+                "snapshot_shas", value=snapshot_shas, expanding=True
+            ),
+            private=private,
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(
@@ -673,17 +664,22 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql query fails.
         """
-        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
-
         statement = sqlalchemy.text(
             "SELECT snapshot_sha "
             "FROM snapshots "
             "WHERE snapshot_num <= "
             "(SELECT MAX(snapshot_num) FROM snapshots "
-            f"WHERE snapshot_sha IN ({snapshot_shas_formatted})) "
-            f"AND external != {private} "
+            "WHERE snapshot_sha IN :snapshot_shas) "
+            "AND external != :private "
             "ORDER BY snapshot_num DESC "
-            f"LIMIT {count}"
+            "LIMIT :count"
+        )
+        statement = statement.bindparams(
+            sqlalchemy.bindparam(
+                "snapshot_shas", value=snapshot_shas, expanding=True
+            ),
+            private=private,
+            count=count,
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(
@@ -723,21 +719,26 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql query fails.
         """
-        # Construct string of snapshot SHAs, to be used in the SQL query.
-        snapshot_shas_formatted = format_list_for_sql_query(snapshot_shas)
-
         statement = sqlalchemy.text(
             "SELECT binhost_id, gs_uri, "
             "EXTRACT(EPOCH FROM b.created_at) AS created_at "
             "FROM binhosts AS b "
             "LEFT JOIN snapshots AS s "
             "ON b.snapshot_sha = s.snapshot_sha "
-            f"WHERE gs_bucket_name='{gs_bucket_name}' AND "
-            f"b.snapshot_sha IN ({snapshot_shas_formatted}) AND "
-            f"build_target_profile_id={build_target_profile_id} AND "
-            f"private={private} "
+            "WHERE gs_bucket_name=:gs_bucket_name AND "
+            "b.snapshot_sha IN :snapshot_shas AND "
+            "build_target_profile_id=:build_target_profile_id AND "
+            "private=:private "
             "ORDER BY snapshot_num DESC "
             "LIMIT 1"
+        )
+        statement = statement.bindparams(
+            sqlalchemy.bindparam(
+                "snapshot_shas", value=snapshot_shas, expanding=True
+            ),
+            gs_bucket_name=gs_bucket_name,
+            build_target_profile_id=build_target_profile_id,
+            private=private,
         )
         # Specify the columns for SQLAlchemy ORM mapping.
         statement = statement.columns(
@@ -758,13 +759,15 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql execution fails.
         """
-        # Construct string of binhost IDs, to be used in the SQL query.
-        binhost_ids_formatted = ",".join(f"{x}" for x in binhost_ids)
-
         statement = sqlalchemy.text(
             "UPDATE binhosts "
             "SET last_accessed = CURRENT_TIMESTAMP "
-            f"WHERE binhost_id IN ({binhost_ids_formatted})"
+            "WHERE binhost_id IN :binhost_ids"
+        )
+        statement = statement.bindparams(
+            sqlalchemy.bindparam(
+                "binhost_ids", value=binhost_ids, expanding=True
+            ),
         )
 
         try:
