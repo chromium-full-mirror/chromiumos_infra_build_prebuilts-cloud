@@ -7,19 +7,19 @@
 # (e.g. update-service-snapshot-data).
 
 # Path to the env file for the cloud function.
-:"${ENV_FILE:=}"
+: "${ENV_FILE:=}"
 
 # Cloud function name.
-:"${FUNCTION_NAME:=}"
+: "${FUNCTION_NAME:=}"
 
 # Runtime service account for the cloud function.
-:"${SERVICE_ACCOUNT:=}"
+: "${SERVICE_ACCOUNT:=}"
 
 # PubSub topic which will act as a trigger to the cloud function.
-:"${TOPIC_NAME:=}"
+: "${TOPIC_NAME:=}"
 
 # VPC connector to be associated with the cloud function.
-:"${VPC_CONNECTOR:=}"
+: "${VPC_CONNECTOR:=}"
 
 # Deploy the cloud function.
 gcloud functions deploy "${FUNCTION_NAME}" \
