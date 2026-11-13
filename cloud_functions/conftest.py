@@ -96,11 +96,11 @@ def mock_snapshots_db_connection(
     """
     attrs = {
         "query.return_value.get.return_value": mock_snapshot_object,
-        "query.return_value.filter.return_value.all.return_value": [
+        "query.return_value.filter_by.return_value.all.return_value": [
             mock_snapshot_object
         ],
         (
-            "query.return_value.filter.return_value.limit.return_value.all."
+            "query.return_value.filter_by.return_value.limit.return_value.all."
             "return_value"
         ): [mock_snapshot_object],
     }
@@ -139,11 +139,11 @@ def mock_build_target_profiles_db_connection(
         "query.return_value.get.return_value": (
             mock_build_target_profile_object
         ),
-        "query.return_value.filter.return_value.all.return_value": [
+        "query.return_value.filter_by.return_value.all.return_value": [
             mock_build_target_profile_object
         ],
         (
-            "query.return_value.filter.return_value.limit.return_value.all."
+            "query.return_value.filter_by.return_value.limit.return_value.all."
             "return_value"
         ): [mock_build_target_profile_object],
     }
@@ -201,11 +201,11 @@ def mock_binhosts_db_connection(
     """
     attrs = {
         "query.return_value.get.return_value": mock_binhost_object,
-        "query.return_value.filter.return_value.all.return_value": [
+        "query.return_value.filter_by.return_value.all.return_value": [
             mock_binhost_object
         ],
         (
-            "query.return_value.filter.return_value.limit.return_value.all."
+            "query.return_value.filter_by.return_value.limit.return_value.all."
             "return_value"
         ): [mock_binhost_object],
     }

@@ -85,9 +85,9 @@ def test_snapshots_read_error(
 @pytest.mark.parametrize(
     "test_input, expected",
     [
-        ({"filter_exp": "snapshot_num == 1"}, "mock_snapshot_objects_list"),
+        ({"snapshot_num": 1}, "mock_snapshot_objects_list"),
         (
-            {"filter_exp": "snapshot_num == 1", "limit": 1},
+            {"snapshot_num": 1, "limit": 1},
             "mock_snapshot_objects_list",
         ),
     ],
@@ -258,11 +258,11 @@ def test_build_target_profiles_read_error(
     "test_input, expected",
     [
         (
-            {"filter_exp": "profile == test_profile"},
+            {"profile": "test_profile"},
             "mock_build_target_profile_objects_list",
         ),
         (
-            {"filter_exp": "profile == test_profile", "limit": 1},
+            {"profile": "test_profile", "limit": 1},
             "mock_build_target_profile_objects_list",
         ),
     ],
@@ -425,9 +425,9 @@ def test_binhosts_read_error(
 @pytest.mark.parametrize(
     "test_input, expected",
     [
-        (({"filter_exp": "binhost_id == 1"}), "mock_binhost_objects_list"),
+        (({"binhost_id": 1}), "mock_binhost_objects_list"),
         (
-            ({"filter_exp": "binhost_id == 1", "limit": 1}),
+            ({"binhost_id": 1, "limit": 1}),
             "mock_binhost_objects_list",
         ),
     ],

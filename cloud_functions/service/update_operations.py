@@ -173,11 +173,9 @@ def update_binhost_data(
     logging.info("Update binhost data request: \n%s", binhost_data)
     build_target_profiles = (
         lookup_service_db_connection.build_target_profiles_filter(
-            (
-                f"build_target='{binhost_data.build_target}' AND "
-                f"profile='{binhost_data.profile}'"
-            ),
             limit=1,
+            build_target=binhost_data.build_target,
+            profile=binhost_data.profile,
         )
     )
 
@@ -210,7 +208,7 @@ def update_binhost_data(
         "private": binhost_data.private,
     }
     existing_binhosts = lookup_service_db_connection.binhosts_filter(
-        f"gs_uri='{binhost_data.gs_uri}'", limit=1
+        limit=1, gs_uri=binhost_data.gs_uri
     )
     if existing_binhosts:
         existing_binhost_id = existing_binhosts[0].binhost_id

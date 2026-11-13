@@ -115,8 +115,9 @@ def _lookup_build_target_profile_id(
         The id of the build target profile, if found.
     """
     build_target_profiles = db_connection.build_target_profiles_filter(
-        f"build_target='{build_target}' AND profile='{profile}'",
         limit=1,
+        build_target=build_target,
+        profile=profile,
     )
     if not build_target_profiles:
         return None

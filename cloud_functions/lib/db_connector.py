@@ -99,8 +99,8 @@ class LookupServiceDBConnection:
     def _execute_filter(
         self,
         model: sqlalchemy.orm.decl_api.DeclarativeMeta,
-        filter_exp: str,
         limit: Optional[int] = None,
+        **kwargs: dict[str, Any],
     ) -> List[Any]:
         """Filter and read data from a specific table.
 
@@ -109,10 +109,10 @@ class LookupServiceDBConnection:
 
         Args:
             model: SQLAlchemy model to apply the filter to.
-            filter_exp: Textual sql filter expression that would be in a sql
-                WHERE clause. e.g. "external=True AND buildbucket_id='123'". The
-                fields in the expression must be specific to the table.
             limit: Max number of records to return.
+            **kwargs: Keyword arguments for filtering on table columns.
+                e.g. external=True, buildbucket_id=123. The fields must be
+                specific to the table.
 
         Returns:
             A list of model objects based on the filter.
@@ -120,7 +120,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        query = self._session.query(model).filter(sqlalchemy.text(filter_exp))
+        query = self._session.query(model).filter_by(**kwargs)
         if limit:
             query = query.limit(limit)
         try:
@@ -223,14 +223,14 @@ class LookupServiceDBConnection:
             ) from sql_error
 
     def snapshots_filter(
-        self, filter_exp: str, limit: Optional[int] = None
+        self, limit: Optional[int] = None, **kwargs: dict[str, Any]
     ) -> List[models.Snapshots]:
         """Filter and read from the snapshots table.
 
         Args:
-            filter_exp: Textual sql filter expression that would be in a sql
-                WHERE clause. e.g. "external=True AND buildbucket_id='123'".
             limit: Max number of records to return.
+            **kwargs: Keyword arguments for filtering on table columns.
+                e.g. external=True, buildbucket_id=123.
 
         Returns:
             A list of Snapshot objects based on the filter.
@@ -238,7 +238,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        return self._execute_filter(models.Snapshots, filter_exp, limit)
+        return self._execute_filter(models.Snapshots, limit=limit, **kwargs)
 
     def snapshots_update(
         self,
@@ -361,14 +361,14 @@ class LookupServiceDBConnection:
             ) from sql_error
 
     def build_target_profiles_filter(
-        self, filter_exp: str, limit: Optional[int] = None
+        self, limit: Optional[int] = None, **kwargs: dict[str, Any]
     ) -> List[models.BuildTargetProfiles]:
         """Filter and read from the build_target_profiles table.
 
         Args:
-            filter_exp: Textual sql filter expression that would be in a
-                sql WHERE clause. e.g."build_target='brya'".
             limit: Max number of records to return.
+            **kwargs: Keyword arguments for filtering on table columns.
+                e.g. build_target="brya".
 
         Returns:
             A list of build target profile objects based on the filter.
@@ -377,7 +377,7 @@ class LookupServiceDBConnection:
             DBError: When the sql filter query fails.
         """
         return self._execute_filter(
-            models.BuildTargetProfiles, filter_exp, limit
+            models.BuildTargetProfiles, limit=limit, **kwargs
         )
 
     def build_target_profiles_update(
@@ -510,14 +510,14 @@ class LookupServiceDBConnection:
         return result
 
     def binhosts_filter(
-        self, filter_exp: str, limit: Optional[int] = None
+        self, limit: Optional[int] = None, **kwargs: dict[str, Any]
     ) -> List[models.Binhosts]:
         """Filter and read from the binhosts table.
 
         Args:
-            filter_exp: Textual sql filter expression that would be in a
-                sql WHERE clause. e.g."private=True AND snapshot_sha='123'".
             limit: Max number of records to return.
+            **kwargs: Keyword arguments for filtering on table columns.
+                e.g. private=True, snapshot_sha="123".
 
         Returns:
             A list of binhost objects based on the filter.
@@ -525,7 +525,7 @@ class LookupServiceDBConnection:
         Raises:
             DBError: When the sql filter query fails.
         """
-        return self._execute_filter(models.Binhosts, filter_exp, limit)
+        return self._execute_filter(models.Binhosts, limit=limit, **kwargs)
 
     def binhosts_update(
         self,
