@@ -148,7 +148,7 @@ and
 [VPython](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython_one_page.md)
 to run unittests in a Python VirtualEnv. See
 [here](https://chromium.googlesource.com/infra/infra/+/main/infra/tools/dockerbuild/wheels.md)
-for a list of available wheels. `vpython3 run_tests.py` will run all unittests
+for a list of available wheels. `./run_tests` will run all unittests
 by default.
 
 ## Cloud SQL
