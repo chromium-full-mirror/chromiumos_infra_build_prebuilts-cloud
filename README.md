@@ -2,96 +2,161 @@
 
 This repo houses all the GCP code for the `chromeos-prebuilts` project.
 
-Most of the GCP resources are defined and deployed through a terraform+annealing setup as per go/cciac. The terraform code for the resources is defined in the [chromeos_prebuilts](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts) folder.
+Most of the GCP resources are defined and deployed through a terraform+annealing
+setup as per go/cciac. The terraform code for the resources is defined in the
+[chromeos_prebuilts](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts)
+folder.
 
-Some resources are deployed through Cloud Build and some are managed and deployed manually. Details for how different resource types are managed is documented below.
+Some resources are deployed through Cloud Build and some are managed and
+deployed manually. Details for how different resource types are managed is
+documented below.
 
 ## Cloud Functions
 
 We're using Cloud Functions as a serverless platform for the lookup service.
 
-The entry points for the Cloud Functions are defined in `cloud_functions/main.py`.
-Each entry point has a `functions_framework` decorator which helps receive the function arguments based on the signature type specified.
+The entry points for the Cloud Functions are defined in
+`cloud_functions/main.py`. Each entry point has a `functions_framework`
+decorator which helps receive the function arguments based on the signature type
+specified.
 
 ### Deployment
 
 **All changes, once uploaded to Gerrit, are deployed to staging automatically.
 All changes, once merged, are deployed to production automatically.**
 
-We use Proctor/Cloud Build Integrations ([go/gcb-ggob](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head)) to automatically deploy changes. A Cloud Build build is triggered whenever a new Gerrit patchset is uploaded in the `prebuilts-cloud` project for the staging environment. See [here](https://pantheon.corp.google.com/cloud-build/triggers?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) for details on the Cloud Build trigger setup through Proctor.
+We use Proctor/Cloud Build Integrations
+([go/gcb-ggob](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head))
+to automatically deploy changes. A Cloud Build build is triggered whenever a new
+Gerrit patchset is uploaded in the `prebuilts-cloud` project for the staging
+environment. See
+[here](https://pantheon.corp.google.com/cloud-build/triggers?e=-13802955&mods=component_inspector&project=chromeos-prebuilts)
+for details on the Cloud Build trigger setup through Proctor.
 
 During a build, a few things happen:
-* A Google Cloud Storage object is created containing the source code. The exact location can be determined by inspecting the build logs. [Example](https://screenshot.googleplex.com/GJ36QD8vhu53xv6).
-* A new version of the specified Cloud Function is deployed with 100% traffic.
-* The GCB User will add the Verified+1 label and a comment to your Gerrit change upon a successful build. [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
-A Cloud Build trigger can be run manually by following the steps [here](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head#running-triggers). Once a CL successfully merged, a separate trigger deploys the latest source code to production.
+*   A Google Cloud Storage object is created containing the source code. The
+    exact location can be determined by inspecting the build logs.
+    [Example](https://screenshot.googleplex.com/GJ36QD8vhu53xv6).
+*   A new version of the specified Cloud Function is deployed with 100% traffic.
+*   The GCB User will add the Verified+1 label and a comment to your Gerrit
+    change upon a successful build.
+    [Example](https://screenshot.googleplex.com/tH2VEQZ3h8mZgHW).
 
-The scripts and config files for the the cloud build deployments are in the `cloudbuild/` folder.
+A Cloud Build trigger can be run manually by following the steps
+[here](https://g3doc.corp.google.com/devtools/proctor/g3doc/user/ggob.md?cl=head#running-triggers).
+Once a CL successfully merged, a separate trigger deploys the latest source code
+to production.
+
+The scripts and config files for the the cloud build deployments are in the
+`cloudbuild/` folder.
 
 #### Runtime environment variables for the lookup service cloud function:
 
-- ENV : Environment, can be one of staging, prod.
-- SQL_CONNECTION_TIMEOUT : Connection timeout for the sqlalchemy engine.
-- PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql instance.
-- PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
+-   ENV : Environment, can be one of staging, prod.
+-   SQL_CONNECTION_TIMEOUT : Connection timeout for the sqlalchemy engine.
+-   PREBUILTS_SQL_INSTANCE_HOST : IP address for the prebuilts cloud sql
+    instance.
+-   PREBUILTS_SQL_INSTANCE_PORT : port for the prebuilts cloud sql instance.
 
 ### General Testing
 
-The main way to test deployed Cloud Functions via a [trigger](https://cloud.google.com/functions/docs/calling) including HTTP requests and Pub/Sub. `staging-lookup-service` is setup to accept HTTP triggers via the `main` function. A function cannot have more than one trigger associated with it, but a trigger can be associated with many functions (as long as the functions are unique).
+The main way to test deployed Cloud Functions via a
+[trigger](https://cloud.google.com/functions/docs/calling) including HTTP
+requests and Pub/Sub. `staging-lookup-service` is setup to accept HTTP triggers
+via the `main` function. A function cannot have more than one trigger associated
+with it, but a trigger can be associated with many functions (as long as the
+functions are unique).
 
-To test `staging-lookup-service`, go to the `Testing` [tab](https://pantheon.corp.google.com/functions/details/us-central1/staging-lookup-service?env=gen1&project=chromeos-prebuilts&tab=testing) and click `Test the Function`. Output is only available if the Cloud Function is deployed using `1st gen` environment.
+To test `staging-lookup-service`, go to the `Testing`
+[tab](https://pantheon.corp.google.com/functions/details/us-central1/staging-lookup-service?env=gen1&project=chromeos-prebuilts&tab=testing)
+and click `Test the Function`. Output is only available if the Cloud Function is
+deployed using `1st gen` environment.
 
 ### Local testing and development
 
-To develop and test cloud functions locally, we should be able to connect to the cloud sql instance from our local machine/cloudtop. Hence, `Public IP` has been enabled on the `prebuilts-staging` instance to accommodate this and the database can be accessed locally through cloud sql auth proxy. **Public IP should not be enabled in production.**
+To develop and test cloud functions locally, we should be able to connect to the
+cloud sql instance from our local machine/cloudtop. Hence, `Public IP` has been
+enabled on the `prebuilts-staging` instance to accommodate this and the database
+can be accessed locally through cloud sql auth proxy. **Public IP should not be
+enabled in production.**
 
-Note: We are running the cloud function locally but are using GCP's staging environment, including staging Cloud SQL database and Secret Manager instances.
+Note: We are running the cloud function locally but are using GCP's staging
+environment, including staging Cloud SQL database and Secret Manager instances.
 
-Steps to run cloud functions locally (All of these steps are done outside the chroot):
-- Setup [cloud sql auth proxy](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy):
-    - Follow the steps [here](https://cloud.google.com/sql/docs/postgres/sql-proxy#install) to download and install Cloud SQL Auth proxy.
-    - Add the downloaded `cloud-sql-proxy` to your `$PATH`.
-    - Start the auth proxy:
+Steps to run cloud functions locally (All of these steps are done outside the
+chroot):
+
+-   Setup
+    [cloud sql auth proxy](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy):
+
+    -   Follow the steps
+        [here](https://cloud.google.com/sql/docs/postgres/sql-proxy#install) to
+        download and install Cloud SQL Auth proxy.
+    -   Add the downloaded `cloud-sql-proxy` to your `$PATH`.
+    -   Start the auth proxy:
+
         ```
         $cloud-sql-proxy --address 127.0.0.1 --port 5432 chromeos-prebuilts:us-central1:prebuilts-staging
         ```
-    - The database should now be accessible locally through the proxy.
-- Install [functions-framework](https://pypi.org/project/functions-framework/).
-- The default values for env variables are in the `scripts/.env.defaults` file. Add a `scripts/.env.local` file to override the values. This can be helpful for local testing without checking it into the repo. Env variables used:
-    - FUNCTION_SOURCE_FILE : Source file for the cloud function.
-    - FUNCTION_TARGET : Entry point for the cloud function.
-    - FUNCTION_PORT : Port to run the function on.
-    - FUNCTION_SIGNATURE_TYPE : Signature type of the function, which determines
-        the event format. Can be one of http, event or cloudevent.
-    - ENV : environment, can be one of staging, prod.
-    - TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data Pub/Sub topic.
-        Topic name refers to the complete name that uniquely identifies a Pub/Sub topic.
-    - TOPIC_NAME_UPDATE_BINHOST_DATA : Topic name of the update binhost data Pub/Sub topic.
-- Additional env variables in `scripts/.env.defaults`, useful for local testing and development (use the cloud-sql-proxy database host and port).
-    - PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
-    - PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
-- Run the cloud function server locally : `./scripts/run_server_local.sh` (This script also sets up a virtual env and installs the required packages).
-    - In `.env.local`, update `FUNCTION_TARGET` and `FUNCTION_SIGNATURE_TYPE` based on whether you want to run the lookup or the update service.
-    - For running the lookup function, `FUNCTION_TARGET=lookup_service` and `FUNCTION_SIGNATURE_TYPE=http`
-    - For running the update function, `FUNCTION_TARGET=update_service` and `FUNCTION_SIGNATURE_TYPE=cloud_event`
-- Invoke the cloud function locally : `./scripts/test_cloud_function_local.sh -r lookup`
-    - Suitable command line args need to be passed to call the lookup/update
-    service with the required inputs.
-    - More details in the `./scripts/test_cloud_function_local.sh` file.
+    -   The database should now be accessible locally through the proxy.
+-   Install
+    [functions-framework](https://pypi.org/project/functions-framework/).
+-   The default values for env variables are in the `scripts/.env.defaults`
+    file. Add a `scripts/.env.local` file to override the values. This can be
+    helpful for local testing without checking it into the repo. Env variables
+    used:
+
+    -   FUNCTION_SOURCE_FILE : Source file for the cloud function.
+    -   FUNCTION_TARGET : Entry point for the cloud function.
+    -   FUNCTION_PORT : Port to run the function on.
+    -   FUNCTION_SIGNATURE_TYPE : Signature type of the function, which
+        determines the event format. Can be one of http, event or cloudevent.
+    -   ENV : environment, can be one of staging, prod.
+    -   TOPIC_NAME_UPDATE_SNAPSHOT_DATA : Topic name of the update snapshot data
+        Pub/Sub topic. Topic name refers to the complete name that uniquely
+        identifies a Pub/Sub topic.
+    -   TOPIC_NAME_UPDATE_BINHOST_DATA : Topic name of the update binhost data
+        Pub/Sub topic.
+-   Additional env variables in `scripts/.env.defaults`, useful for local
+    testing and development (use the cloud-sql-proxy database host and port).
+
+    -   PREBUILTS_SQL_INSTANCE_HOST : IP address for the sql instance.
+    -   PREBUILTS_SQL_INSTANCE_PORT : Port for the sql instance.
+-   Run the cloud function server locally : `./scripts/run_server_local.sh`
+    (This script also sets up a virtual env and installs the required packages).
+
+    -   In `.env.local`, update `FUNCTION_TARGET` and `FUNCTION_SIGNATURE_TYPE`
+        based on whether you want to run the lookup or the update service.
+    -   For running the lookup function, `FUNCTION_TARGET=lookup_service` and
+        `FUNCTION_SIGNATURE_TYPE=http`
+    -   For running the update function, `FUNCTION_TARGET=update_service` and
+        `FUNCTION_SIGNATURE_TYPE=cloud_event`
+-   Invoke the cloud function locally :
+    `./scripts/test_cloud_function_local.sh -r lookup`
+
+    -   Suitable command line args need to be passed to call the lookup/update
+        service with the required inputs.
+    -   More details in the `./scripts/test_cloud_function_local.sh` file.
 
 Note: The cloud function auto restarts when any of the source files are changed.
 
 ### Unit Testing
 
-We use [pytest](https://docs.pytest.org/en/7.2.x/) as our unittesting framework and [VPython](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython_one_page.md) to run unittests in a Python VirtualEnv. See [here](https://chromium.googlesource.com/infra/infra/+/main/infra/tools/dockerbuild/wheels.md) for a list of available wheels. `vpython3 run_tests.py` will run all unittests by default.
+We use [pytest](https://docs.pytest.org/en/7.2.x/) as our unittesting framework
+and
+[VPython](https://chromium.googlesource.com/infra/infra/+/main/doc/users/vpython_one_page.md)
+to run unittests in a Python VirtualEnv. See
+[here](https://chromium.googlesource.com/infra/infra/+/main/infra/tools/dockerbuild/wheels.md)
+for a list of available wheels. `vpython3 run_tests.py` will run all unittests
+by default.
 
 ## Cloud SQL
 
 We have two Cloud SQL instances:
 
-1. `prebuilts` - the production instance
-2. `prebuilts-staging` - the staging instance
+1.  `prebuilts` - the production instance
+2.  `prebuilts-staging` - the staging instance
 
 ### Databases
 
@@ -99,74 +164,126 @@ Each instance currently contains a `lookup_service` database for the project.
 
 ### Deployments
 
-**During initial development, we are manually deploying changes to the `staging` instances of both Cloud SQL and Cloud Functions.
-DO NOT deploy to production instances as the production deployment process will be automated later.**
+**During initial development, we are manually deploying changes to the `staging`
+instances of both Cloud SQL and Cloud Functions. DO NOT deploy to production
+instances as the production deployment process will be automated later.**
 
 To manually deploy changes:
 
-1. Upload the .sql file to Cloud Storage in the `cloudsql-manual-deployments` [bucket](https://pantheon.corp.google.com/storage/browser/cloudsql-manual-deployments?project=chromeos-prebuilts).
-2. In the Cloud SQL instance [overview page](https://pantheon.corp.google.com/sql/instances/prebuilts-staging/overview?project=chromeos-prebuilts), select `IMPORT`.
-3. Select the .sql file uploaded to Cloud Storage above and select `lookup_service` as the database destination.
-4. Select `Import` and wait a few minutes for the import to complete.
+1.  Upload the .sql file to Cloud Storage in the `cloudsql-manual-deployments`
+    [bucket](https://pantheon.corp.google.com/storage/browser/cloudsql-manual-deployments?project=chromeos-prebuilts).
+2.  In the Cloud SQL instance
+    [overview page](https://pantheon.corp.google.com/sql/instances/prebuilts-staging/overview?project=chromeos-prebuilts),
+    select `IMPORT`.
+3.  Select the .sql file uploaded to Cloud Storage above and select
+    `lookup_service` as the database destination.
+4.  Select `Import` and wait a few minutes for the import to complete.
 
 ### Connections
 
-The following steps can be used to connect to the database and verify deployments and/or query data:
+The following steps can be used to connect to the database and verify
+deployments and/or query data:
 
-1. Open a Cloud Shell console.
-2. Run `./cloud-sql-proxy --port 5432 chromeos-prebuilts:us-central1:staging-prebuilts`.
-3. In a separate tab, run `psql "host=127.0.0.1 sslmode=disable dbname=lookup_service user=postgres"`.
-4. The postgres user password can be found [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
+1.  Open a Cloud Shell console.
+2.  Run `./cloud-sql-proxy --port 5432
+    chromeos-prebuilts:us-central1:staging-prebuilts`.
+3.  In a separate tab, run
+    `psql "host=127.0.0.1 sslmode=disable dbname=lookup_service user=postgres"`.
+4.  The postgres user password can be found
+    [here](https://pantheon.corp.google.com/security/secret-manager?project=chromeos-prebuilts).
 
 ## Pub/Sub
 
-We're using [Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to receive messages and update metadata for snapshots, binhosts, etc in the database.
-The `update_service` cloud functions receive messages as cloud events through Pub/Sub subscriptions via EventArc triggers. Each use case has its own
-Pub/Sub topic (e.g. update_snapshot_data, update_binhost_data) and the corresponding cloud function processes the messages, performs database operations.
-With 2nd gen cloud functions, each function can only have one trigger. So each Pub/Sub topic has its own cloud function for processing messages.
+We're using [Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to receive
+messages and update metadata for snapshots, binhosts, etc in the database. The
+`update_service` cloud functions receive messages as cloud events through
+Pub/Sub subscriptions via EventArc triggers. Each use case has its own Pub/Sub
+topic (e.g. update_snapshot_data, update_binhost_data) and the corresponding
+cloud function processes the messages, performs database operations. With 2nd
+gen cloud functions, each function can only have one trigger. So each Pub/Sub
+topic has its own cloud function for processing messages.
 
 ### Deployment
 
-PubSub topics are defined and deployed through terraform, in the [chromeos_prebuilts](http://google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/) folder.
-
+PubSub topics are defined and deployed through terraform, in the
+[chromeos_prebuilts](http://google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/)
+folder.
 
 ## Protocol Buffers
 
-We're using protocol buffers to have a consistent data format when sending, retrieving Pub/Sub messages.
+We're using protocol buffers to have a consistent data format when sending,
+retrieving Pub/Sub messages.
 
-- The proto definition file related to Pub/Sub is located [here](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
-- The `scripts/gen_proto.sh` script compiles and puts the generated proto files in `cloud_functions/protobuf/chromiumos/`.
-
+-   The proto definition file related to Pub/Sub is located
+    [here](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
+-   The `scripts/gen_proto.sh` script compiles and puts the generated proto
+    files in `cloud_functions/protobuf/chromiumos/`.
 
 ## Binhost Lookup Service API
 
-The binhost lookup service is a HTTP GET endpoint running in a cloud function. The protocol buffer definitions for the request and response are defined in [prebuilts_cloud.proto](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
+The binhost lookup service is a HTTP GET endpoint running in a cloud function.
+The protocol buffer definitions for the request and response are defined in
+[prebuilts_cloud.proto](https://source.chromium.org/chromiumos/chromiumos/codesearch/+/main:infra/proto/src/chromiumos/prebuilts_cloud.proto).
 
 The query parameter to be sent with the request:
-- "filter": A `LookupBinhostsRequest` object encoded as a URL safe base64 byte object.
 
-The response is a `LookupBinhostsResponse` object encoded as a URL safe base64 byte object, sent in the response body.
+-   "filter": A `LookupBinhostsRequest` object encoded as a URL safe base64 byte
+    object.
+
+The response is a `LookupBinhostsResponse` object encoded as a URL safe base64
+byte object, sent in the response body.
 
 ## Secret Manager
 
-GCP Secret Manager is used to store sensitive information that can be accessed by the cloud functions. The secrets are created and managed manually through the cloud console. Secrets being used:
-- prebuilts-db:      Name of the prebuilts PostgreSQL instance.
-- prebuilts-db-user: Name of the database user.
-- prebuilts-db-pw  : Password for the database user.
-- prebuilts-db-host: Private IP address of the database instance.
-- prebuilts-db-port: Port of the database instance.
+GCP Secret Manager is used to store sensitive information that can be accessed
+by the cloud functions. The secrets are created and managed manually through the
+cloud console. Secrets being used:
 
-NOTE: Name of each of these secrets is prefixed by the environment name. e.g. staging-prebuilts-db
+-   prebuilts-db: Name of the prebuilts PostgreSQL instance.
+-   prebuilts-db-user: Name of the database user.
+-   prebuilts-db-pw : Password for the database user.
+-   prebuilts-db-host: Private IP address of the database instance.
+-   prebuilts-db-port: Port of the database instance.
+
+NOTE: Name of each of these secrets is prefixed by the environment name. e.g.
+staging-prebuilts-db
 
 ## Handling Alerts and Errors
-The cloud functions have alerts setup through GCP and the ChromeOS Build team is notified via email when the alert metric breaches the configured threshold (The alerts are configured via [terraform](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/)).
 
-The incidents can be viewed and managed in the [**Alerting**](https://pantheon.corp.google.com/monitoring/alerting?e=-13802955&mods=component_inspector&project=chromeos-prebuilts) page in the cloud console. Gen 2 cloud functions use the Cloud run service, the best way to view the logs is to go to the specific cloud function page -> logs -> "View in logs explorer" icon. The logs can be filtered based on time, severity and other filters by altering the query. The incidents auto close when the metrics for the specific alert go back to within the threshold range.
+The cloud functions have alerts setup through GCP and the ChromeOS Build team is
+notified via email when the alert metric breaches the configured threshold (The
+alerts are configured via
+[terraform](https://source.corp.google.com/piper///depot/google3/configs/cloud/gong/services/chrome_cloud/chromeos_infra_teams/chromeos_build_team/chromeos_prebuilts/)).
+
+The incidents can be viewed and managed in the
+[**Alerting**](https://pantheon.corp.google.com/monitoring/alerting?e=-13802955&mods=component_inspector&project=chromeos-prebuilts)
+page in the cloud console. Gen 2 cloud functions use the Cloud run service, the
+best way to view the logs is to go to the specific cloud function page -> logs
+-> "View in logs explorer" icon. The logs can be filtered based on time,
+severity and other filters by altering the query. The incidents auto close when
+the metrics for the specific alert go back to within the threshold range.
 
 ### Errors in the Lookup Service
-Errors in the lookup-service-binhosts cloud function usually mean the builders/developers did not get the required binhosts, these alerts need to be looked into and fixed so that the builds are fast and efficient.
+
+Errors in the lookup-service-binhosts cloud function usually mean the
+builders/developers did not get the required binhosts, these alerts need to be
+looked into and fixed so that the builds are fast and efficient.
 
 ### Errors in the Update Service
-Errors in the update-service-snapshot-data, update-service-binhost-data cloud functions usually mean the data from the builders was not saved properly in the database. These alerts are very critical and we need to ensure that the messages are reprocessed after the issue is fixed.
-- The Pub/Sub subscriptions are set to retry failed messages with an exponential back off delay, this ensures that messages are retried (The retention duration is set in the topic and subscription) by the cloud functions till they are successfully processed and acknowledged.
-- Additionally, acknowledged messages can be replayed from a previous point in time by going to the subscription page and clicking on [Replay Messages](https://screenshot.googleplex.com/6nwuVZ8qiF7WR3p). This can be useful when we update the cloud function code/logic and want to reprocess already acknowledged messages. Note: Replaying messages won't result in duplicates in the DB even if the message was successfully processed before.
+
+Errors in the update-service-snapshot-data, update-service-binhost-data cloud
+functions usually mean the data from the builders was not saved properly in the
+database. These alerts are very critical and we need to ensure that the messages
+are reprocessed after the issue is fixed.
+
+-   The Pub/Sub subscriptions are set to retry failed messages with an
+    exponential back off delay, this ensures that messages are retried (The
+    retention duration is set in the topic and subscription) by the cloud
+    functions till they are successfully processed and acknowledged.
+-   Additionally, acknowledged messages can be replayed from a previous point in
+    time by going to the subscription page and clicking on
+    [Replay Messages](https://screenshot.googleplex.com/6nwuVZ8qiF7WR3p). This
+    can be useful when we update the cloud function code/logic and want to
+    reprocess already acknowledged messages. Note: Replaying messages won't
+    result in duplicates in the DB even if the message was successfully
+    processed before.
