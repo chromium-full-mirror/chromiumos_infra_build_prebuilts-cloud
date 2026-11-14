@@ -48,6 +48,7 @@ class LookupServiceDBConnection:
 
         self._engine = self._get_engine()
         self._session = self._get_session()
+        self._readonly: Optional[bool] = None
 
     def _get_engine(self) -> sqlalchemy.engine.base.Engine:
         """Get a sqlalchemy engine for the database.
@@ -80,6 +81,27 @@ class LookupServiceDBConnection:
         """
         return sqlalchemy.orm.sessionmaker(bind=self._engine)()
 
+    def _set_readonly(self, readonly: bool) -> None:
+        """Set the transaction read-only mode on the current session.
+
+        Args:
+            readonly: True for read-only transactions, False for read-write.
+        """
+        if readonly:
+            if self._readonly is None:
+                self._session.connection(
+                    execution_options={"postgresql_readonly": True}
+                )
+                self._readonly = True
+        else:
+            if self._readonly is True:
+                self._session.close()
+            if self._readonly is not False:
+                self._session.connection(
+                    execution_options={"postgresql_readonly": False}
+                )
+                self._readonly = False
+
     def _commit_session(self, error_msg: str) -> None:
         """Commit the current sqlalchemy session to the DB.
 
@@ -92,6 +114,7 @@ class LookupServiceDBConnection:
         """
         try:
             self._session.commit()
+            self._readonly = None
         except Exception as sql_error:
             self.close_connection()
             raise DBError(error_msg) from sql_error
@@ -124,6 +147,7 @@ class LookupServiceDBConnection:
         if limit:
             query = query.limit(limit)
         try:
+            self._set_readonly(True)
             result = query.all()
         except Exception as sql_error:
             self.close_connection()
@@ -150,6 +174,7 @@ class LookupServiceDBConnection:
             DBError: When the sql query fails.
         """
         try:
+            self._set_readonly(True)
             result = sql_query.all()
         except Exception as sql_error:
             self.close_connection()
@@ -164,6 +189,7 @@ class LookupServiceDBConnection:
         """
         self._session.close()
         self._engine.dispose()
+        self._readonly = None
 
     def snapshots_create(
         self,
@@ -192,6 +218,7 @@ class LookupServiceDBConnection:
             external=external,
             buildbucket_id=buildbucket_id,
         )
+        self._set_readonly(False)
         self._session.add(new_snapshot)
         self._commit_session(error_msg="Unable to create snapshot record.")
         return new_snapshot
@@ -213,6 +240,7 @@ class LookupServiceDBConnection:
             NoResultFound: When required=True and no snapshot is found.
         """
         try:
+            self._set_readonly(True)
             result = self._session.query(models.Snapshots).get(snapshot_sha)
             if required and result is None:
                 raise sqlalchemy.exc.NoResultFound("No snapshot record found.")
@@ -263,6 +291,7 @@ class LookupServiceDBConnection:
         if snapshot_num is None and external is None and buildbucket_id is None:
             raise DBError("No data to update the snapshot record.")
 
+        self._set_readonly(False)
         snapshot_to_update = self.snapshots_read(snapshot_sha)
 
         if snapshot_num is not None:
@@ -291,6 +320,7 @@ class LookupServiceDBConnection:
             DBError: when delete operation fails.
             NoResultFound: When no snapshot is found.
         """
+        self._set_readonly(False)
         snapshot_to_delete = self.snapshots_read(snapshot_sha)
         self._session.delete(snapshot_to_delete)
         self._commit_session(
@@ -319,6 +349,7 @@ class LookupServiceDBConnection:
             build_target=build_target,
             profile=profile,
         )
+        self._set_readonly(False)
         self._session.add(new_build_target_profile)
         self._commit_session(
             error_msg="Unable to create build target profile record."
@@ -344,6 +375,7 @@ class LookupServiceDBConnection:
                 is found.
         """
         try:
+            self._set_readonly(True)
             result = self._session.query(models.BuildTargetProfiles).get(
                 build_target_profile_id
             )
@@ -403,6 +435,7 @@ class LookupServiceDBConnection:
         if build_target is None and profile is None:
             raise DBError("No data to update the build target profile record.")
 
+        self._set_readonly(False)
         build_target_profile_to_update = self.build_target_profiles_read(
             build_target_profile_id
         )
@@ -430,6 +463,7 @@ class LookupServiceDBConnection:
             DBError: When delete operation fails.
             NoResultFound: When no build target profile is found.
         """
+        self._set_readonly(False)
         build_target_profile_to_delete = self.build_target_profiles_read(
             build_target_profile_id
         )
@@ -478,6 +512,7 @@ class LookupServiceDBConnection:
             complete=complete,
             private=private,
         )
+        self._set_readonly(False)
         self._session.add(new_binhost)
         self._commit_session(error_msg="Unable to create binhost record.")
         return new_binhost
@@ -499,6 +534,7 @@ class LookupServiceDBConnection:
             NoResultFound: When required=True and no binhost is found.
         """
         try:
+            self._set_readonly(True)
             result = self._session.query(models.Binhosts).get(binhost_id)
         except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
@@ -572,6 +608,7 @@ class LookupServiceDBConnection:
         if all(val is None for val in update_attrs.values()):
             raise DBError("No data to update the binhost record.")
 
+        self._set_readonly(False)
         binhost_to_update = self.binhosts_read(binhost_id)
 
         # Assign new values to the binhost_to_update object.
@@ -597,6 +634,7 @@ class LookupServiceDBConnection:
             NoResultFound: When no binhost is found.
         """
 
+        self._set_readonly(False)
         binhost_to_delete = self.binhosts_read(binhost_id)
         self._session.delete(binhost_to_delete)
         self._commit_session(
@@ -771,8 +809,10 @@ class LookupServiceDBConnection:
         )
 
         try:
+            self._set_readonly(False)
             self._session.execute(statement)
             self._session.close()
+            self._readonly = None
         except sqlalchemy.exc.DBAPIError as sql_error:
             raise DBError(
                 "Error when executing the sql statement."

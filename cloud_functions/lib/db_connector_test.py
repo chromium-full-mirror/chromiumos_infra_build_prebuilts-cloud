@@ -30,6 +30,9 @@ def test_snapshots_create(
         *snapshot_args
     )
 
+    mock_snapshots_db_connection._session.connection.assert_called_once_with(
+        execution_options={"postgresql_readonly": False}
+    )
     mock_snapshots_db_connection._session.add.assert_called_once()
     mock_snapshots_db_connection._session.commit.assert_called_once()
     assert isinstance(created_snapshot, models.Snapshots)
@@ -64,6 +67,9 @@ def test_snapshots_read(
     assert (
         mock_snapshots_db_connection.snapshots_read("sha1")
         == mock_snapshot_object
+    )
+    mock_snapshots_db_connection._session.connection.assert_called_once_with(
+        execution_options={"postgresql_readonly": True}
     )
 
 
@@ -615,3 +621,33 @@ def test_update_binhosts_last_accessed_error(
         match=r"^Error when executing the sql statement\.$",
     ):
         mock_db_connection.update_binhosts_last_accessed([1, 2])
+
+
+def test_readonly_mode_transitions(
+    mock_snapshots_db_connection: db_connector.LookupServiceDBConnection,
+):
+    """Test postgresql_readonly transitions between reads and writes."""
+    # Consecutive reads should only configure postgresql_readonly=True once
+    # for the active transaction.
+    mock_snapshots_db_connection.snapshots_read("sha1")
+    mock_snapshots_db_connection.snapshots_filter(snapshot_num=1)
+    mock_snapshots_db_connection._session.connection.assert_called_once_with(
+        execution_options={"postgresql_readonly": True}
+    )
+
+    # Switching to an update should close the read-only transaction and start a
+    # read-write transaction (including its internal snapshots_read call).
+    mock_snapshots_db_connection.snapshots_update("sha1", 2)
+    mock_snapshots_db_connection._session.close.assert_called_once()
+    assert mock_snapshots_db_connection._session.connection.call_args_list == [
+        mock.call(execution_options={"postgresql_readonly": True}),
+        mock.call(execution_options={"postgresql_readonly": False}),
+    ]
+
+    # A subsequent read after commit should start a new read-only transaction.
+    mock_snapshots_db_connection.snapshots_read("sha1")
+    assert mock_snapshots_db_connection._session.connection.call_args_list == [
+        mock.call(execution_options={"postgresql_readonly": True}),
+        mock.call(execution_options={"postgresql_readonly": False}),
+        mock.call(execution_options={"postgresql_readonly": True}),
+    ]
